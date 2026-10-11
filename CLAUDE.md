@@ -49,8 +49,9 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
-v2 (2.0.0) — dodany build w chmurze (GitHub Actions) i stały klucz podpisu. Kod z v1 nie był
-jeszcze kompilowany — pierwszy build w Actions pokaże ewentualne błędy.
+v3 (3.0.0) — lepsze wykrywanie natywnej aplikacji (QUERY_ALL_PACKAGES, aplikacje zamrożone przez
+Boox, wyszukiwanie po nazwie/etykiecie, ręczny wybór aplikacji z listy).
+v2 (2.0.0) — build w chmurze (GitHub Actions), stały klucz podpisu; kompiluje się, testowane na Boox.
 
 ## Build w chmurze (bez komputera)
 `.github/workflows/build.yml`: każdy push na `main` buduje APK i publikuje go jako GitHub Release

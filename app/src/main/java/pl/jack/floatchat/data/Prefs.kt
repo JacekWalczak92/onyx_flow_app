@@ -33,6 +33,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("native_mode", false)
         set(v) = sp.edit().putBoolean("native_mode", v).apply()
 
+    /** Ręcznie wybrana paczka natywnej aplikacji ("" = wykryj automatycznie). */
+    var nativePackage: String
+        get() = sp.getString("native_package", "")!!
+        set(v) = sp.edit().putString("native_package", v).apply()
+
     var bubbleX: Int
         get() = sp.getInt("bubble_x", -1)
         set(v) = sp.edit().putInt("bubble_x", v).apply()

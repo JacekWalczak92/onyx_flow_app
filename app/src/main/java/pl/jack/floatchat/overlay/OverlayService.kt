@@ -104,7 +104,7 @@ class OverlayService : Service() {
 
     private fun expand() {
         if (prefs.nativeMode) {
-            val pkg = prefs.provider().nativePackage
+            val pkg = NativeAppLauncher.resolvePackage(this, prefs)
             if (pkg != null && NativeAppLauncher.launch(this, pkg)) { showBubble(); return }
             Toast.makeText(this, "Nie udało się otworzyć aplikacji — używam okna", Toast.LENGTH_SHORT).show()
         }
@@ -125,7 +125,7 @@ class OverlayService : Service() {
             .setPrimaryClip(ClipData.newPlainText("FloatChat", text))
 
         if (prefs.nativeMode) {
-            val pkg = prefs.provider().nativePackage
+            val pkg = NativeAppLauncher.resolvePackage(this, prefs)
             if (pkg != null && NativeAppLauncher.launch(this, pkg, text)) { showBubble(); return }
         }
         expand()

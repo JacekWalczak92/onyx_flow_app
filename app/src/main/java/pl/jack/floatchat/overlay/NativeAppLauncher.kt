@@ -1,9 +1,12 @@
 package pl.jack.floatchat.overlay
 
 import android.app.ActivityOptions
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Rect
+import pl.jack.floatchat.data.Prefs
 
 /**
  * Tryb eksperymentalny: otwiera natywną aplikację czatu w oknie obok bieżącej aplikacji.
@@ -13,24 +16,92 @@ import android.graphics.Rect
  *  - w trybie podzielonego ekranu (FLAG_ACTIVITY_LAUNCH_ADJACENT), albo
  *  - w oknie swobodnym o zadanych granicach (setLaunchBounds) — wymaga włączonych
  *    „okien swobodnych" (Opcje programisty → Enable freeform windows).
- * Efekt zależy od firmware Boox — dlatego to tylko opcja, a domyślnie używamy WebView.
+ *
+ * Wykrywanie aplikacji (v3): Boox potrafi „zamrozić" aplikacje (wyłączyć je), a paczka może
+ * się różnić od oczekiwanej — dlatego szukamy po nazwie paczki i etykiecie, a użytkownik
+ * może też wybrać aplikację ręcznie z listy.
  */
 object NativeAppLauncher {
 
-    fun isInstalled(context: Context, pkg: String): Boolean =
-        context.packageManager.getLaunchIntentForPackage(pkg) != null
+    data class AppEntry(val pkg: String, val label: String)
+
+    /** Słowa kluczowe do automatycznego wyszukania aplikacji danego serwisu. */
+    private val keywords = mapOf(
+        "chatgpt" to listOf("openai", "chatgpt"),
+        "claude" to listOf("anthropic", "claude"),
+        "gemini" to listOf("gemini", "bard"),
+        "perplexity" to listOf("perplexity"),
+    )
+
+    /** Wszystkie aplikacje z ikoną w launcherze (posortowane po nazwie). */
+    fun listLaunchableApps(context: Context): List<AppEntry> {
+        val pm = context.packageManager
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        return pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
+            .map { AppEntry(it.activityInfo.packageName, it.loadLabel(pm).toString()) }
+            .filter { it.pkg != context.packageName }
+            .distinctBy { it.pkg }
+            .sortedBy { it.label.lowercase() }
+    }
+
+    /** Czy paczka jest zainstalowana (także gdy wyłączona / zamrożona). */
+    fun isInstalled(context: Context, pkg: String): Boolean = try {
+        context.packageManager.getApplicationInfo(pkg, PackageManager.MATCH_DISABLED_COMPONENTS)
+        true
+    } catch (e: PackageManager.NameNotFoundException) {
+        false
+    }
+
+    /** false = aplikacja jest zainstalowana, ale wyłączona (np. zamrożona przez Boox). */
+    fun isEnabled(context: Context, pkg: String): Boolean = try {
+        context.packageManager.getApplicationInfo(pkg, PackageManager.MATCH_DISABLED_COMPONENTS).enabled
+    } catch (e: PackageManager.NameNotFoundException) {
+        false
+    }
+
+    fun labelOf(context: Context, pkg: String): String = try {
+        val pm = context.packageManager
+        pm.getApplicationInfo(pkg, PackageManager.MATCH_DISABLED_COMPONENTS).loadLabel(pm).toString()
+    } catch (e: PackageManager.NameNotFoundException) {
+        pkg
+    }
+
+    /**
+     * Paczka natywnej aplikacji do użycia: ręczny wybór z ustawień, a jeśli go nie ma —
+     * domyślna paczka serwisu, a na końcu wyszukiwanie po słowach kluczowych.
+     */
+    fun resolvePackage(context: Context, prefs: Prefs): String? {
+        prefs.nativePackage.takeIf { it.isNotBlank() && isInstalled(context, it) }?.let { return it }
+        val provider = prefs.provider()
+        provider.nativePackage?.takeIf { isInstalled(context, it) }?.let { return it }
+        val words = keywords[provider.id] ?: return null
+        return listLaunchableApps(context).firstOrNull { app ->
+            words.any { w -> app.pkg.contains(w, ignoreCase = true) || app.label.contains(w, ignoreCase = true) }
+        }?.pkg
+    }
+
+    private fun launcherIntent(context: Context, pkg: String): Intent? {
+        val pm = context.packageManager
+        pm.getLaunchIntentForPackage(pkg)?.let { return it }
+        val query = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setPackage(pkg)
+        val info = pm.queryIntentActivities(query, PackageManager.MATCH_ALL).firstOrNull() ?: return null
+        return Intent(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_LAUNCHER)
+            .setComponent(ComponentName(info.activityInfo.packageName, info.activityInfo.name))
+    }
 
     /** Otwiera aplikację; jeśli [text] != null — przekazuje go przez ACTION_SEND (ChatGPT to obsługuje). */
     fun launch(context: Context, pkg: String, text: String? = null): Boolean {
-        val intent = if (text != null) {
+        val pm = context.packageManager
+        val sendIntent = text?.let {
             Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 setPackage(pkg)
-                putExtra(Intent.EXTRA_TEXT, text)
-            }
-        } else {
-            context.packageManager.getLaunchIntentForPackage(pkg) ?: return false
+                putExtra(Intent.EXTRA_TEXT, it)
+            }.takeIf { i -> pm.queryIntentActivities(i, PackageManager.MATCH_ALL).isNotEmpty() }
         }
+        // Gdy aplikacja nie przyjmuje ACTION_SEND — zwykłe uruchomienie (tekst jest w schowku).
+        val intent = sendIntent ?: launcherIntent(context, pkg) ?: return false
         intent.addFlags(
             Intent.FLAG_ACTIVITY_NEW_TASK or
                 Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT or

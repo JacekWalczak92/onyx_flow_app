@@ -10,6 +10,11 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -92,7 +97,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 2.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 3.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -134,16 +139,57 @@ class MainActivity : ComponentActivity() {
             ToggleRow("Wyślij od razu po wklejeniu", autoSend) { autoSend = it; prefs.autoSend = it }
 
             Section("4. Tryb natywnej aplikacji (eksperymentalny)")
-            val pkg = Providers.byId(providerId, customUrl).nativePackage
-            val installed = pkg != null && NativeAppLauncher.isInstalled(this@MainActivity, pkg)
+            var manualPkg by remember { mutableStateOf(prefs.nativePackage) }
+            var showPicker by remember { mutableStateOf(false) }
+            val pkg = remember(tick, providerId, manualPkg) { NativeAppLauncher.resolvePackage(this@MainActivity, prefs) }
+            val enabledApp = pkg != null && NativeAppLauncher.isEnabled(this@MainActivity, pkg)
             Text(
-                if (pkg == null) "Ten serwis nie ma natywnej aplikacji."
-                else if (installed) "Bąbel otworzy zainstalowaną aplikację w oknie obok (podział ekranu / okno swobodne). " +
-                    "Zależy od firmware Boox — jeśli nie zadziała, wyłącz tę opcję."
-                else "Aplikacja $pkg nie jest zainstalowana."
+                when {
+                    pkg == null -> "Nie znaleziono natywnej aplikacji tego serwisu. Wybierz ją ręcznie z listy."
+                    !enabledApp -> "Znaleziono: ${NativeAppLauncher.labelOf(this@MainActivity, pkg)} ($pkg), " +
+                        "ale jest wyłączona/zamrożona. Odmroź ją w ustawieniach aplikacji Boox."
+                    else -> "Aplikacja: ${NativeAppLauncher.labelOf(this@MainActivity, pkg)} ($pkg)" +
+                        (if (manualPkg.isBlank()) " — wykryta automatycznie." else " — wybrana ręcznie.") +
+                        "\nBąbel otworzy ją obok czytnika (podział ekranu / okno swobodne). Zależy od firmware Boox."
+                }
             )
-            ToggleRow("Otwieraj natywną aplikację zamiast okna", nativeMode && installed, enabled = installed) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { showPicker = true }, border = BorderStroke(2.dp, Color.Black)) {
+                    Text("Wybierz aplikację z listy")
+                }
+                if (manualPkg.isNotBlank()) {
+                    OutlinedButton(
+                        onClick = { manualPkg = ""; prefs.nativePackage = "" },
+                        border = BorderStroke(2.dp, Color.Black),
+                    ) { Text("Wykrywaj automatycznie") }
+                }
+            }
+            ToggleRow("Otwieraj natywną aplikację zamiast okna", nativeMode && pkg != null, enabled = pkg != null) {
                 nativeMode = it; prefs.nativeMode = it
+            }
+            if (showPicker) {
+                val apps = remember { NativeAppLauncher.listLaunchableApps(this@MainActivity) }
+                AlertDialog(
+                    onDismissRequest = { showPicker = false },
+                    confirmButton = { TextButton(onClick = { showPicker = false }) { Text("Anuluj") } },
+                    title = { Text("Wybierz aplikację czatu") },
+                    text = {
+                        LazyColumn(Modifier.height(420.dp)) {
+                            items(apps) { app ->
+                                Column(
+                                    Modifier.fillMaxWidth().clickable {
+                                        manualPkg = app.pkg; prefs.nativePackage = app.pkg; showPicker = false
+                                    }.padding(vertical = 10.dp)
+                                ) {
+                                    Text(app.label, fontSize = 18.sp)
+                                    Text(app.pkg, fontSize = 13.sp)
+                                }
+                                HorizontalDivider(color = Color.Black)
+                            }
+                        }
+                    },
+                    containerColor = Color.White,
+                )
             }
 
             Section("5. Start")
