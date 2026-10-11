@@ -49,6 +49,8 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
+v8 (8.0.0) — wykrywanie zamrożonej (wyłączonej) natywnej aplikacji, automatyczny zapas: okno strony;
+skrót do ustawień aplikacji (menu bąbla i ekran ustawień).
 v7 (7.0.0) — bąbel: 1× dotknięcie = otwórz okno, 2× = menu (okno 400 ms na drugie dotknięcie).
 v6 (6.0.0) — menu bąbla w trybie natywnym (otwórz/zmniejsz do okienka, rozmiar mały/średni/duży,
 wróć do czytnika, okno strony); czytnik wykrywany z referrera „Zapytaj AI” lub wybierany ręcznie.

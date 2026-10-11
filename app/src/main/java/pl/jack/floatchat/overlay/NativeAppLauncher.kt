@@ -62,6 +62,13 @@ object NativeAppLauncher {
         false
     }
 
+    /** Systemowa strona aplikacji (tam / w ustawieniach Boox wyłącza się zamrażanie i optymalizację). */
+    fun openAppDetails(context: Context, pkg: String) {
+        val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$pkg"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(i) }
+    }
+
     fun labelOf(context: Context, pkg: String): String = try {
         val pm = context.packageManager
         pm.getApplicationInfo(pkg, PackageManager.MATCH_DISABLED_COMPONENTS).loadLabel(pm).toString()

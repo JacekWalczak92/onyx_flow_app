@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 7.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 8.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -158,6 +158,12 @@ class MainActivity : ComponentActivity() {
                 OutlinedButton(onClick = { showPicker = true }, border = BorderStroke(2.dp, Color.Black)) {
                     Text("Wybierz aplikację z listy")
                 }
+                if (pkg != null) {
+                    OutlinedButton(
+                        onClick = { NativeAppLauncher.openAppDetails(this@MainActivity, pkg) },
+                        border = BorderStroke(2.dp, Color.Black),
+                    ) { Text("Ustawienia aplikacji") }
+                }
                 if (manualPkg.isNotBlank()) {
                     OutlinedButton(
                         onClick = { manualPkg = ""; prefs.nativePackage = "" },
@@ -165,6 +171,12 @@ class MainActivity : ComponentActivity() {
                     ) { Text("Wykrywaj automatycznie") }
                 }
             }
+            Text(
+                "Jeśli czasem nie da się otworzyć aplikacji: Boox zamraża ją w tle. W ustawieniach Boox " +
+                    "(przytrzymaj ikonę aplikacji lub Ustawienia → Aplikacje) wyłącz dla niej zamrażanie " +
+                    "i optymalizację baterii. To samo zrób dla FloatChat. Gdy aplikacja jest niedostępna, " +
+                    "FloatChat sam otworzy okno strony."
+            )
             ToggleRow("Otwieraj natywną aplikację zamiast okna", nativeMode && pkg != null, enabled = pkg != null) {
                 nativeMode = it; prefs.nativeMode = it
             }

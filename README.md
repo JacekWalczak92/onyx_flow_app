@@ -1,4 +1,4 @@
-# FloatChat v7
+# FloatChat v8
 
 Pływające okno czatu AI dla Onyx Boox. Czytasz książkę, zaznaczasz fragment → **Zapytaj AI** →
 obok otwiera się okno z ChatGPT (lub Claude/Gemini/Perplexity) z wklejonym tekstem. Piszesz,
@@ -34,6 +34,10 @@ Błędy kompilacji: zakładka **Actions** → nieudany build → log.
 
 **Boox:** w ustawieniach aplikacji FloatChat (Optymalizacja aplikacji / App Management) wyłącz
 zamrażanie w tle, inaczej system może zamknąć bąbel.
+
+**Zamrażanie ChatGPT:** jeśli natywny ChatGPT czasem się nie otwiera, Boox zamroził go w tle.
+Wyłącz zamrażanie i optymalizację baterii dla ChatGPT (2× bąbel → Ustawienia ChatGPT). Do tego czasu
+FloatChat automatycznie otwiera okno strony.
 
 **Logowanie:** zaloguj się e-mailem i hasłem. Logowanie „Kontynuuj z Google" w oknie WebView
 jest blokowane przez Google.

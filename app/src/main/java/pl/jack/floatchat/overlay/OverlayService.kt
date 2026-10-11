@@ -104,11 +104,7 @@ class OverlayService : Service() {
     // ---------------------------------------------------------------- logika
 
     private fun expand() {
-        if (prefs.nativeMode) {
-            val pkg = NativeAppLauncher.resolvePackage(this, prefs)
-            if (pkg != null && NativeAppLauncher.launch(this, pkg, null, prefs.windowMode, prefs.windowSize)) { showBubble(); return }
-            Toast.makeText(this, "Nie udało się otworzyć aplikacji — używam okna", Toast.LENGTH_SHORT).show()
-        }
+        if (prefs.nativeMode && tryOpenNative(null, prefs.windowSize)) { showBubble(); return }
         hideBubble()
         val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { stopSelf() }).also { panel = it }
         p.reloadProviderIfChanged()
@@ -125,11 +121,8 @@ class OverlayService : Service() {
         getSystemService(ClipboardManager::class.java)
             .setPrimaryClip(ClipData.newPlainText("FloatChat", text))
 
-        if (prefs.nativeMode) {
-            val pkg = NativeAppLauncher.resolvePackage(this, prefs)
-            if (pkg != null && NativeAppLauncher.launch(this, pkg, text, prefs.windowMode, prefs.windowSize)) { showBubble(); return }
-        }
-        expand()
+        if (prefs.nativeMode && tryOpenNative(text, prefs.windowSize)) { showBubble(); return }
+        openWebPanel()
         // Mała zwłoka, żeby okno zdążyło się podpiąć; skrypt i tak czeka na pole tekstowe.
         handler.postDelayed({ panel?.injectText(text) }, 250)
     }
@@ -188,6 +181,11 @@ class OverlayService : Service() {
             }
         }
         item("⌂  Okno strony (WebView)") { forceWebPanel() }
+        if (chatPkg != null) {
+            item("⚙  Ustawienia $chatLabel" + if (!NativeAppLauncher.isEnabled(this, chatPkg)) " (zamrożony!)" else "") {
+                NativeAppLauncher.openAppDetails(this, chatPkg)
+            }
+        }
         item("✕  Zamknij menu") { }
 
         val dm = resources.displayMetrics
@@ -225,10 +223,48 @@ class OverlayService : Service() {
 
     /** Otwiera natywny czat w pływającym okienku — także „zmniejsza" go z pełnego ekranu. */
     private fun openNativeWindow(size: String) {
+        if (!tryOpenNative(null, size)) openWebPanel()
+    }
+
+    /**
+     * Próbuje otworzyć natywny czat. Zwraca false, gdy się nie da — wtedy wołający
+     * otwiera okno strony, żeby użytkownik zawsze dostał czat.
+     *
+     * Najczęstsza przyczyna porażki na Boox: aplikacja jest „zamrożona" (wyłączona przez
+     * system Boox w tle) — wyłączonej aplikacji nie da się uruchomić z innej aplikacji.
+     */
+    private fun tryOpenNative(text: String?, size: String): Boolean {
         val pkg = NativeAppLauncher.resolvePackage(this, prefs)
-        if (pkg == null || !NativeAppLauncher.launch(this, pkg, null, prefs.windowMode, size)) {
-            Toast.makeText(this, "Nie udało się otworzyć aplikacji czatu", Toast.LENGTH_SHORT).show()
+        if (pkg == null) {
+            Toast.makeText(this, "Nie znaleziono aplikacji czatu — otwieram okno strony", Toast.LENGTH_SHORT).show()
+            return false
         }
+        val label = NativeAppLauncher.labelOf(this, pkg)
+        if (!NativeAppLauncher.isEnabled(this, pkg)) {
+            Toast.makeText(
+                this,
+                "$label jest zamrożony przez Boox — otwieram okno strony. Wyłącz zamrażanie: 2× bąbel → Ustawienia $label",
+                Toast.LENGTH_LONG,
+            ).show()
+            return false
+        }
+        if (NativeAppLauncher.launch(this, pkg, text, prefs.windowMode, size)) return true
+        // Druga próba bez przekazywania tekstu (tekst i tak jest w schowku).
+        if (text != null && NativeAppLauncher.launch(this, pkg, null, prefs.windowMode, size)) {
+            Toast.makeText(this, "Tekst jest w schowku — wklej go w $label", Toast.LENGTH_SHORT).show()
+            return true
+        }
+        Toast.makeText(this, "Nie udało się otworzyć $label — otwieram okno strony", Toast.LENGTH_SHORT).show()
+        return false
+    }
+
+    /** Okno strony (WebView) — także jako zapas, gdy natywna aplikacja nie działa. */
+    private fun openWebPanel(textToInject: String? = null) {
+        hideBubble()
+        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { stopSelf() }).also { panel = it }
+        p.reloadProviderIfChanged()
+        p.show()
+        textToInject?.let { t -> handler.postDelayed({ panel?.injectText(t) }, 250) }
     }
 
     /** Jednorazowo otwiera panel ze stroną, nawet w trybie natywnym. */
