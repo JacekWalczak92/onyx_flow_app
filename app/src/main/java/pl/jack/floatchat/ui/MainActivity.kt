@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -97,7 +98,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 4.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 5.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -188,13 +189,30 @@ class MainActivity : ComponentActivity() {
                         "Włącz: Opcje programisty → „Enable freeform windows” (oraz „Force activities to be resizable”), " +
                         "potem uruchom Boox ponownie. Przed testem zamknij ChatGPT z listy ostatnich aplikacji."
                 )
-                OutlinedButton(
-                    onClick = {
-                        runCatching { startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)) }
-                            .onFailure { startActivity(Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)) }
-                    },
-                    border = BorderStroke(2.dp, Color.Black),
-                ) { Text("Otwórz opcje programisty") }
+                Text(
+                    "Krok 1: „Informacje o urządzeniu” → stuknij 7× w „Numer kompilacji” (Build number).\n" +
+                        "Krok 2: „Opcje programisty” → włącz okna swobodne i wymuszanie zmiany rozmiaru → restart."
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            openSystemScreen(
+                                Settings.ACTION_DEVICE_INFO_SETTINGS,
+                                "com.android.settings.Settings\$MyDeviceInfoActivity",
+                            )
+                        },
+                        border = BorderStroke(2.dp, Color.Black),
+                    ) { Text("Informacje o urządzeniu") }
+                    OutlinedButton(
+                        onClick = {
+                            openSystemScreen(
+                                Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS,
+                                "com.android.settings.Settings\$DevelopmentSettingsDashboardActivity",
+                            )
+                        },
+                        border = BorderStroke(2.dp, Color.Black),
+                    ) { Text("Opcje programisty") }
+                }
             }
             if (showPicker) {
                 val apps = remember { NativeAppLauncher.listLaunchableApps(this@MainActivity) }
@@ -246,6 +264,23 @@ class MainActivity : ComponentActivity() {
             )
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    /**
+     * Otwiera standardowy ekran ustawień Androida (Boox chowa część z nich w swojej nakładce).
+     * Najpierw jawnie aplikacja com.android.settings, potem zwykła akcja systemowa.
+     */
+    private fun openSystemScreen(action: String, stockActivity: String) {
+        val attempts = listOf(
+            Intent().setClassName("com.android.settings", stockActivity),
+            Intent(action).setPackage("com.android.settings"),
+            Intent(action),
+        )
+        for (i in attempts) {
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            if (runCatching { startActivity(i) }.isSuccess) return
+        }
+        Toast.makeText(this, "Nie udało się otworzyć ustawień systemu", Toast.LENGTH_LONG).show()
     }
 
     @Composable

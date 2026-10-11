@@ -49,6 +49,8 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
+v5 (5.0.0) — przyciski otwierające stockowe „Informacje o urządzeniu” i „Opcje programisty”
+(Boox ukrywa numer kompilacji w swojej nakładce).
 v4 (4.0.0) — natywna aplikacja w pływającym oknie: ukryte ActivityOptions.setLaunchWindowingMode(5)
 przez HiddenApiBypass; wymaga włączonych okien swobodnych w opcjach programisty. Wybór: okno / podział ekranu.
 v3 (3.0.0) — lepsze wykrywanie natywnej aplikacji (QUERY_ALL_PACKAGES, aplikacje zamrożone przez
