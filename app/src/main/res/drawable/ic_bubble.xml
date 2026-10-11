@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dymek czatu: czarny kontur, białe wnętrze — czytelny na e-ink -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="3"
+        android:pathData="M8,8 H40 A4,4 0 0 1 44,12 V30 A4,4 0 0 1 40,34 H20 L11,42 V34 H8 A4,4 0 0 1 4,30 V12 A4,4 0 0 1 8,8 Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M14,19 a2.5,2.5 0 1 0 5,0 a2.5,2.5 0 1 0 -5,0 M21.5,19 a2.5,2.5 0 1 0 5,0 a2.5,2.5 0 1 0 -5,0 M29,19 a2.5,2.5 0 1 0 5,0 a2.5,2.5 0 1 0 -5,0" />
+</vector>
