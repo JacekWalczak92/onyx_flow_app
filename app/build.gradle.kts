@@ -12,16 +12,29 @@ android {
         applicationId = "pl.jack.floatchat"
         minSdk = 29          // Boox Note Air 5C = Android 13+, ale zostawiamy zapas
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"   // FloatChat_v1
+        versionCode = 2
+        versionName = "2.0.0"   // FloatChat_v2
+    }
+
+    // Stały klucz w repo (aplikacja prywatna, sideload) — dzięki temu APK z GitHub Actions
+    // można instalować jako aktualizację bez odinstalowywania poprzedniej wersji.
+    signingConfigs {
+        create("floatchat") {
+            storeFile = rootProject.file("keystore/floatchat.jks")
+            storePassword = "floatchat"
+            keyAlias = "floatchat"
+            keyPassword = "floatchat"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("floatchat")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Do szybkiego sideloadu na Boox: podpis kluczem debug
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("floatchat")
         }
     }
 

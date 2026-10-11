@@ -49,8 +49,14 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
-v1 (1.0.0) — napisane bez kompilacji (środowisko bez Android SDK). Pierwszy krok: zbuduj i popraw
-ewentualne błędy kompilacji.
+v2 (2.0.0) — dodany build w chmurze (GitHub Actions) i stały klucz podpisu. Kod z v1 nie był
+jeszcze kompilowany — pierwszy build w Actions pokaże ewentualne błędy.
+
+## Build w chmurze (bez komputera)
+`.github/workflows/build.yml`: każdy push na `main` buduje APK i publikuje go jako GitHub Release
+(`FloatChat-<wersja>-build<N>.apk`). Na Boox: Releases → pobierz APK → zainstaluj.
+Podpis: `keystore/floatchat.jks` (hasło `floatchat`) — celowo w repo, by aktualizacje się instalowały.
+Repo: https://github.com/JacekWalczak92/onyx_flow_app
 
 ## Pomysły na kolejne wersje
 - Onyx SDK (`com.onyx.android.sdk:onyxsdk-device`) — wymuszanie odświeżenia A2/Regal przy przeciąganiu okna.

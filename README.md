@@ -1,10 +1,17 @@
-# FloatChat v1
+# FloatChat v2
 
 Pływające okno czatu AI dla Onyx Boox. Czytasz książkę, zaznaczasz fragment → **Zapytaj AI** →
 obok otwiera się okno z ChatGPT (lub Claude/Gemini/Perplexity) z wklejonym tekstem. Piszesz,
 minimalizujesz do bąbla „—" i wracasz do czytania. Rozmowa czeka w bąblu.
 
-## Instalacja
+## Instalacja bez komputera (GitHub Actions)
+Każdy push na `main` buduje APK w chmurze i publikuje go w **Releases**:
+https://github.com/JacekWalczak92/onyx_flow_app/releases
+Na Boox otwórz ten link w przeglądarce, pobierz najnowszy `FloatChat-…apk` i zainstaluj
+(za pierwszym razem zezwól przeglądarce na instalację nieznanych aplikacji).
+Błędy kompilacji: zakładka **Actions** → nieudany build → log.
+
+## Instalacja z komputera
 1. Otwórz folder w VS Code (zalecane rozszerzenia podpowie `.vscode/extensions.json`).
 2. Upewnij się, że masz JDK 17+ i Android SDK (`ANDROID_HOME` lub `local.properties`).
 3. `./gradlew assembleDebug`
