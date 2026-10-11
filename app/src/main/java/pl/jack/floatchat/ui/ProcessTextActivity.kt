@@ -3,6 +3,7 @@ package pl.jack.floatchat.ui
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import pl.jack.floatchat.data.Prefs
 import pl.jack.floatchat.overlay.OverlayService
 
 /**
@@ -18,6 +19,12 @@ class ProcessTextActivity : Activity() {
             Intent.ACTION_SEND -> intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
             else -> null
         }?.toString()?.trim()
+
+        // Zapamiętaj aplikację-źródło (np. czytnik), by „Wróć do czytnika" wiedział, dokąd wrócić.
+        val source = callingPackage ?: referrer?.takeIf { it.scheme == "android-app" }?.host
+        if (source != null && source != packageName && source != "android") {
+            Prefs(this).lastSourcePackage = source
+        }
 
         if (!text.isNullOrEmpty()) {
             OverlayService.start(this, OverlayService.ACTION_INJECT, text)

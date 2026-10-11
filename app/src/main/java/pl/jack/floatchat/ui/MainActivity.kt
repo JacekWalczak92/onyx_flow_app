@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 5.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 6.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -239,6 +239,40 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            if (nativeMode) {
+                Text("Rozmiar okienka:", fontWeight = FontWeight.Bold)
+                var windowSize by remember { mutableStateOf(prefs.windowSize) }
+                listOf("small" to "Małe", "medium" to "Średnie", "large" to "Duże").forEach { (id, label) ->
+                    Row(
+                        Modifier.fillMaxWidth().selectable(selected = windowSize == id) {
+                            windowSize = id; prefs.windowSize = id
+                        }.padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = windowSize == id, onClick = null)
+                        Text(label, Modifier.padding(start = 12.dp), fontSize = 17.sp)
+                    }
+                }
+
+                var readerPkg by remember { mutableStateOf(prefs.readerPackage) }
+                var showReaderPicker by remember { mutableStateOf(false) }
+                val resolvedReader = remember(tick, readerPkg) { NativeAppLauncher.resolveReader(this@MainActivity, prefs) }
+                Text(
+                    "Czytnik (przycisk „Wróć do…” w menu bąbla): " +
+                        (resolvedReader?.let { "${NativeAppLauncher.labelOf(this@MainActivity, it)} ($it)" }
+                            ?: "nie wykryto — wybierz z listy lub użyj raz „Zapytaj AI” w czytniku")
+                )
+                OutlinedButton(onClick = { showReaderPicker = true }, border = BorderStroke(2.dp, Color.Black)) {
+                    Text("Wybierz czytnik z listy")
+                }
+                Text("W trybie natywnym dotknięcie bąbla otwiera menu: otwórz / zmniejsz okno, rozmiar, powrót do czytnika.")
+                if (showReaderPicker) {
+                    AppPickerDialog("Wybierz czytnik", onDismiss = { showReaderPicker = false }) { app ->
+                        readerPkg = app.pkg; prefs.readerPackage = app.pkg; showReaderPicker = false
+                    }
+                }
+            }
+
             Section("5. Start")
             OutlinedButton(
                 onClick = { OverlayService.start(this@MainActivity, OverlayService.ACTION_SHOW_BUBBLE); moveTaskToBack(true) },
@@ -281,6 +315,32 @@ class MainActivity : ComponentActivity() {
             if (runCatching { startActivity(i) }.isSuccess) return
         }
         Toast.makeText(this, "Nie udało się otworzyć ustawień systemu", Toast.LENGTH_LONG).show()
+    }
+
+    @Composable
+    private fun AppPickerDialog(
+        title: String,
+        onDismiss: () -> Unit,
+        onPick: (NativeAppLauncher.AppEntry) -> Unit,
+    ) {
+        val apps = remember { NativeAppLauncher.listLaunchableApps(this@MainActivity) }
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = { TextButton(onClick = onDismiss) { Text("Anuluj") } },
+            title = { Text(title) },
+            text = {
+                LazyColumn(Modifier.height(420.dp)) {
+                    items(apps) { app ->
+                        Column(Modifier.fillMaxWidth().clickable { onPick(app) }.padding(vertical = 10.dp)) {
+                            Text(app.label, fontSize = 18.sp)
+                            Text(app.pkg, fontSize = 13.sp)
+                        }
+                        HorizontalDivider(color = Color.Black)
+                    }
+                }
+            },
+            containerColor = Color.White,
+        )
     }
 
     @Composable

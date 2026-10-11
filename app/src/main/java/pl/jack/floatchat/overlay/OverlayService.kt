@@ -93,6 +93,7 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         isRunning = false
+        hideNativeMenu()
         bubble?.let { runCatching { wm.removeView(it) } }
         bubble = null
         panel?.destroy()
@@ -105,7 +106,7 @@ class OverlayService : Service() {
     private fun expand() {
         if (prefs.nativeMode) {
             val pkg = NativeAppLauncher.resolvePackage(this, prefs)
-            if (pkg != null && NativeAppLauncher.launch(this, pkg, null, prefs.windowMode)) { showBubble(); return }
+            if (pkg != null && NativeAppLauncher.launch(this, pkg, null, prefs.windowMode, prefs.windowSize)) { showBubble(); return }
             Toast.makeText(this, "Nie udało się otworzyć aplikacji — używam okna", Toast.LENGTH_SHORT).show()
         }
         hideBubble()
@@ -126,11 +127,114 @@ class OverlayService : Service() {
 
         if (prefs.nativeMode) {
             val pkg = NativeAppLauncher.resolvePackage(this, prefs)
-            if (pkg != null && NativeAppLauncher.launch(this, pkg, text, prefs.windowMode)) { showBubble(); return }
+            if (pkg != null && NativeAppLauncher.launch(this, pkg, text, prefs.windowMode, prefs.windowSize)) { showBubble(); return }
         }
         expand()
         // Mała zwłoka, żeby okno zdążyło się podpiąć; skrypt i tak czeka na pole tekstowe.
         handler.postDelayed({ panel?.injectText(text) }, 250)
+    }
+
+    // ---------------------------------------------------------------- menu trybu natywnego
+
+    private var menu: View? = null
+    private var menuHiddenAt = 0L
+
+    /**
+     * Menu pod bąblem (tryb natywnej aplikacji). Duże przyciski działają zawsze, także gdy
+     * ChatGPT jest na pełnym ekranie, a systemowy „✕" wypada pod panelem Boox.
+     */
+    private fun toggleNativeMenu() {
+        if (menu != null) { hideNativeMenu(); return }
+        // Dotknięcie bąbla przy otwartym menu najpierw je zamyka (ACTION_OUTSIDE) — nie otwieraj od razu ponownie.
+        if (android.os.SystemClock.uptimeMillis() - menuHiddenAt < 600) return
+        val d = resources.displayMetrics.density
+        fun dp(v: Int) = (v * d).toInt()
+
+        val column = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundResource(R.drawable.bg_panel)
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+        }
+        fun item(label: String, action: () -> Unit) {
+            val tv = android.widget.TextView(this).apply {
+                text = label
+                textSize = 18f
+                setTextColor(android.graphics.Color.BLACK)
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(16), 0, dp(16), 0)
+                setOnClickListener { hideNativeMenu(); action() }
+            }
+            if (column.childCount > 0) {
+                column.addView(View(this).apply { setBackgroundColor(android.graphics.Color.BLACK) },
+                    android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(1)))
+            }
+            column.addView(tv, android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, dp(56)))
+        }
+
+        val chatPkg = NativeAppLauncher.resolvePackage(this, prefs)
+        val chatLabel = chatPkg?.let { NativeAppLauncher.labelOf(this, it) } ?: "czat"
+        val readerPkg = NativeAppLauncher.resolveReader(this, prefs)
+
+        item("▣  Otwórz / zmniejsz $chatLabel") { openNativeWindow(prefs.windowSize) }
+        item("▫  Małe okienko") { prefs.windowSize = "small"; openNativeWindow("small") }
+        item("▢  Duże okienko") { prefs.windowSize = "large"; openNativeWindow("large") }
+        if (readerPkg != null) {
+            item("↩  Wróć do: ${NativeAppLauncher.labelOf(this, readerPkg)}") {
+                if (!NativeAppLauncher.bringToFront(this, readerPkg)) {
+                    Toast.makeText(this, "Nie udało się otworzyć czytnika", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        item("⌂  Okno strony (WebView)") { forceWebPanel() }
+        item("✕  Zamknij menu") { }
+
+        val dm = resources.displayMetrics
+        val width = dp(300)
+        val params = WindowManager.LayoutParams(
+            width, WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            val bubbleW = bubble?.width ?: dp(64)
+            x = if (bubbleParams.x > dm.widthPixels / 2) max(0, bubbleParams.x - width - dp(8))
+                else bubbleParams.x + bubbleW + dp(8)
+            y = max(0, bubbleParams.y)
+            windowAnimations = 0
+        }
+        column.setOnTouchListener { _, ev ->
+            if (ev.actionMasked == MotionEvent.ACTION_OUTSIDE) {
+                hideNativeMenu()
+                menuHiddenAt = android.os.SystemClock.uptimeMillis()
+            }
+            false
+        }
+        wm.addView(column, params)
+        menu = column
+    }
+
+    private fun hideNativeMenu() {
+        menu?.let { runCatching { wm.removeView(it) } }
+        menu = null
+    }
+
+    /** Otwiera natywny czat w pływającym okienku — także „zmniejsza" go z pełnego ekranu. */
+    private fun openNativeWindow(size: String) {
+        val pkg = NativeAppLauncher.resolvePackage(this, prefs)
+        if (pkg == null || !NativeAppLauncher.launch(this, pkg, null, prefs.windowMode, size)) {
+            Toast.makeText(this, "Nie udało się otworzyć aplikacji czatu", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /** Jednorazowo otwiera panel ze stroną, nawet w trybie natywnym. */
+    private fun forceWebPanel() {
+        hideBubble()
+        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { stopSelf() }).also { panel = it }
+        p.reloadProviderIfChanged()
+        p.show()
     }
 
     // ---------------------------------------------------------------- bąbel
@@ -194,7 +298,7 @@ class OverlayService : Service() {
                     if (moved) {
                         prefs.bubbleX = bubbleParams.x; prefs.bubbleY = bubbleParams.y
                     } else if (e.eventTime - downTime < 900) {
-                        expand()
+                        if (prefs.nativeMode) toggleNativeMenu() else expand()
                     }
                 }
                 MotionEvent.ACTION_CANCEL -> handler.removeCallbacks(longPress)

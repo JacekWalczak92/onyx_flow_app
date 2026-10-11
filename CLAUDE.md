@@ -49,6 +49,8 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
+v6 (6.0.0) — menu bąbla w trybie natywnym (otwórz/zmniejsz do okienka, rozmiar mały/średni/duży,
+wróć do czytnika, okno strony); czytnik wykrywany z referrera „Zapytaj AI” lub wybierany ręcznie.
 v5 (5.0.0) — przyciski otwierające stockowe „Informacje o urządzeniu” i „Opcje programisty”
 (Boox ukrywa numer kompilacji w swojej nakładce).
 v4 (4.0.0) — natywna aplikacja w pływającym oknie: ukryte ActivityOptions.setLaunchWindowingMode(5)

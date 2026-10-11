@@ -43,6 +43,21 @@ class Prefs(context: Context) {
         get() = sp.getString("window_mode", "freeform")!!
         set(v) = sp.edit().putString("window_mode", v).apply()
 
+    /** Rozmiar pływającego okna natywnej aplikacji: "small" / "medium" / "large". */
+    var windowSize: String
+        get() = sp.getString("window_size", "medium")!!
+        set(v) = sp.edit().putString("window_size", v).apply()
+
+    /** Aplikacja czytnika, do której wraca przycisk „Wróć do czytnika" ("" = automatycznie). */
+    var readerPackage: String
+        get() = sp.getString("reader_package", "")!!
+        set(v) = sp.edit().putString("reader_package", v).apply()
+
+    /** Ostatnia aplikacja, z której przyszedł zaznaczony tekst (wykrywana automatycznie). */
+    var lastSourcePackage: String
+        get() = sp.getString("last_source_package", "")!!
+        set(v) = sp.edit().putString("last_source_package", v).apply()
+
     var bubbleX: Int
         get() = sp.getInt("bubble_x", -1)
         set(v) = sp.edit().putInt("bubble_x", v).apply()

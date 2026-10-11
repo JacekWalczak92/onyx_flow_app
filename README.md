@@ -1,4 +1,4 @@
-# FloatChat v5
+# FloatChat v6
 
 Pływające okno czatu AI dla Onyx Boox. Czytasz książkę, zaznaczasz fragment → **Zapytaj AI** →
 obok otwiera się okno z ChatGPT (lub Claude/Gemini/Perplexity) z wklejonym tekstem. Piszesz,
@@ -36,6 +36,11 @@ zamrażanie w tle, inaczej system może zamknąć bąbel.
 
 **Logowanie:** zaloguj się e-mailem i hasłem. Logowanie „Kontynuuj z Google" w oknie WebView
 jest blokowane przez Google.
+
+## Tryb natywnej aplikacji — menu bąbla
+Gdy włączony jest tryb natywnej aplikacji, dotknięcie bąbla otwiera menu:
+**Otwórz / zmniejsz** (przywraca okienko także z pełnego ekranu), **Małe / Duże okienko**,
+**Wróć do czytnika**, **Okno strony**. Przytrzymanie bąbla zamyka FloatChat.
 
 ## Natywna aplikacja ChatGPT?
 Android nie pozwala wyświetlić innej aplikacji wewnątrz naszego pływającego okna. Opcja
