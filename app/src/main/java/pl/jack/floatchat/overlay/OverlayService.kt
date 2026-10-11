@@ -146,7 +146,7 @@ class OverlayService : Service() {
     private fun toggleNativeMenu() {
         if (menu != null) { hideNativeMenu(); return }
         // Dotknięcie bąbla przy otwartym menu najpierw je zamyka (ACTION_OUTSIDE) — nie otwieraj od razu ponownie.
-        if (android.os.SystemClock.uptimeMillis() - menuHiddenAt < 600) return
+        if (android.os.SystemClock.uptimeMillis() - menuHiddenAt < 300) return
         val d = resources.displayMetrics.density
         fun dp(v: Int) = (v * d).toInt()
 
@@ -175,9 +175,11 @@ class OverlayService : Service() {
         val chatLabel = chatPkg?.let { NativeAppLauncher.labelOf(this, it) } ?: "czat"
         val readerPkg = NativeAppLauncher.resolveReader(this, prefs)
 
-        item("▣  Otwórz / zmniejsz $chatLabel") { openNativeWindow(prefs.windowSize) }
-        item("▫  Małe okienko") { prefs.windowSize = "small"; openNativeWindow("small") }
-        item("▢  Duże okienko") { prefs.windowSize = "large"; openNativeWindow("large") }
+        if (chatPkg != null) {
+            item("▣  Otwórz / zmniejsz $chatLabel") { openNativeWindow(prefs.windowSize) }
+            item("▫  Małe okienko") { prefs.windowSize = "small"; openNativeWindow("small") }
+            item("▢  Duże okienko") { prefs.windowSize = "large"; openNativeWindow("large") }
+        }
         if (readerPkg != null) {
             item("↩  Wróć do: ${NativeAppLauncher.labelOf(this, readerPkg)}") {
                 if (!NativeAppLauncher.bringToFront(this, readerPkg)) {
@@ -298,7 +300,7 @@ class OverlayService : Service() {
                     if (moved) {
                         prefs.bubbleX = bubbleParams.x; prefs.bubbleY = bubbleParams.y
                     } else if (e.eventTime - downTime < 900) {
-                        if (prefs.nativeMode) toggleNativeMenu() else expand()
+                        onBubbleTap()
                     }
                 }
                 MotionEvent.ACTION_CANCEL -> handler.removeCallbacks(longPress)
@@ -308,6 +310,24 @@ class OverlayService : Service() {
 
         wm.addView(view, bubbleParams)
         bubble = view
+    }
+
+    // Pojedyncze dotknięcie = otwórz okno; podwójne = menu.
+    // Pojedyncze czeka chwilę na ewentualne drugie dotknięcie (na e-ink dajemy więcej czasu).
+    private val doubleTapWindowMs = 400L
+    private var lastTapAt = 0L
+    private val singleTap = Runnable { hideNativeMenu(); expand() }
+
+    private fun onBubbleTap() {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastTapAt < doubleTapWindowMs) {
+            handler.removeCallbacks(singleTap)
+            lastTapAt = 0L
+            toggleNativeMenu()
+        } else {
+            lastTapAt = now
+            handler.postDelayed(singleTap, doubleTapWindowMs)
+        }
     }
 
     private fun hideBubble() {

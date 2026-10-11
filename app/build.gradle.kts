@@ -12,8 +12,8 @@ android {
         applicationId = "pl.jack.floatchat"
         minSdk = 29          // Boox Note Air 5C = Android 13+, ale zostawiamy zapas
         targetSdk = 35
-        versionCode = 6
-        versionName = "6.0.0"   // FloatChat_v6
+        versionCode = 7
+        versionName = "7.0.0"   // FloatChat_v7
     }
 
     // Stały klucz w repo (aplikacja prywatna, sideload) — dzięki temu APK z GitHub Actions

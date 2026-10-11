@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 6.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 7.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -265,7 +265,7 @@ class MainActivity : ComponentActivity() {
                 OutlinedButton(onClick = { showReaderPicker = true }, border = BorderStroke(2.dp, Color.Black)) {
                     Text("Wybierz czytnik z listy")
                 }
-                Text("W trybie natywnym dotknięcie bąbla otwiera menu: otwórz / zmniejsz okno, rozmiar, powrót do czytnika.")
+                Text("Bąbel: jedno dotknięcie otwiera okno czatu, dwa dotknięcia — menu (zmniejsz okno, rozmiar, powrót do czytnika).")
                 if (showReaderPicker) {
                     AppPickerDialog("Wybierz czytnik", onDismiss = { showReaderPicker = false }) { app ->
                         readerPkg = app.pkg; prefs.readerPackage = app.pkg; showReaderPicker = false
@@ -291,7 +291,7 @@ class MainActivity : ComponentActivity() {
                 "• W czytniku zaznacz tekst → w menu wybierz „Zapytaj AI” (lub Udostępnij → FloatChat). " +
                     "Okno otworzy się z wklejonym tekstem.\n" +
                     "• Albo skopiuj tekst i w oknie dotknij „Wklej”.\n" +
-                    "• „—” minimalizuje do bąbla, rozmowa zostaje. Przytrzymaj bąbel, by zamknąć.\n" +
+                    "• „—” minimalizuje do bąbla, rozmowa zostaje. Dwa dotknięcia bąbla = menu. Przytrzymaj bąbel, by zamknąć.\n" +
                     "• Przeciągaj okno za pasek tytułu, zmieniaj rozmiar uchwytem ◢. Dotknij nazwy serwisu, aby przełączyć.\n" +
                     "• Logowanie: użyj e-maila i hasła — logowanie „przez Google” w oknie WebView jest blokowane przez Google.\n" +
                     "• Kafelek „FloatChat” możesz dodać do szybkich ustawień."

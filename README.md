@@ -1,4 +1,4 @@
-# FloatChat v6
+# FloatChat v7
 
 Pływające okno czatu AI dla Onyx Boox. Czytasz książkę, zaznaczasz fragment → **Zapytaj AI** →
 obok otwiera się okno z ChatGPT (lub Claude/Gemini/Perplexity) z wklejonym tekstem. Piszesz,
@@ -23,6 +23,7 @@ Błędy kompilacji: zakładka **Actions** → nieudany build → log.
 | Gest | Działanie |
 |---|---|
 | Dotknij bąbla | otwórz okno |
+| Dotknij bąbla 2× | menu (zmniejsz okno, rozmiar, powrót do czytnika) |
 | Przeciągnij bąbel | przesuń |
 | Przytrzymaj bąbel ~1 s | zamknij FloatChat |
 | Pasek tytułu | przeciąganie okna; dotknięcie nazwy = następny serwis |
@@ -38,7 +39,7 @@ zamrażanie w tle, inaczej system może zamknąć bąbel.
 jest blokowane przez Google.
 
 ## Tryb natywnej aplikacji — menu bąbla
-Gdy włączony jest tryb natywnej aplikacji, dotknięcie bąbla otwiera menu:
+Jedno dotknięcie bąbla otwiera okno czatu, **dwa dotknięcia** otwierają menu:
 **Otwórz / zmniejsz** (przywraca okienko także z pełnego ekranu), **Małe / Duże okienko**,
 **Wróć do czytnika**, **Okno strony**. Przytrzymanie bąbla zamyka FloatChat.
 
