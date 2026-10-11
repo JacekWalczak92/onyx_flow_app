@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Rect
+import android.os.Build
+import android.provider.Settings
+import org.lsposed.hiddenapibypass.HiddenApiBypass
 import pl.jack.floatchat.data.Prefs
 
 /**
@@ -90,8 +93,31 @@ object NativeAppLauncher {
             .setComponent(ComponentName(info.activityInfo.packageName, info.activityInfo.name))
     }
 
+    /** WINDOWING_MODE_FREEFORM z ukrytego WindowConfiguration. */
+    private const val WINDOWING_MODE_FREEFORM = 5
+
+    /** Czy system ma włączone okna swobodne (Opcje programisty → Enable freeform windows). */
+    fun isFreeformEnabled(context: Context): Boolean {
+        val feature = context.packageManager.hasSystemFeature(PackageManager.FEATURE_FREEFORM_WINDOW_MANAGEMENT)
+        val setting = Settings.Global.getInt(context.contentResolver, "enable_freeform_support", 0) != 0
+        return feature || setting
+    }
+
+    /** Wymusza tryb okna swobodnego przez ukryte API (działa tylko, gdy system ma freeform). */
+    private fun setFreeform(options: ActivityOptions): Boolean = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            HiddenApiBypass.invoke(ActivityOptions::class.java, options, "setLaunchWindowingMode", WINDOWING_MODE_FREEFORM)
+        } else {
+            ActivityOptions::class.java.getMethod("setLaunchWindowingMode", Int::class.javaPrimitiveType)
+                .invoke(options, WINDOWING_MODE_FREEFORM)
+        }
+        true
+    } catch (e: Throwable) {
+        false
+    }
+
     /** Otwiera aplikację; jeśli [text] != null — przekazuje go przez ACTION_SEND (ChatGPT to obsługuje). */
-    fun launch(context: Context, pkg: String, text: String? = null): Boolean {
+    fun launch(context: Context, pkg: String, text: String? = null, windowMode: String = "freeform"): Boolean {
         val pm = context.packageManager
         val sendIntent = text?.let {
             Intent(Intent.ACTION_SEND).apply {
@@ -102,16 +128,14 @@ object NativeAppLauncher {
         }
         // Gdy aplikacja nie przyjmuje ACTION_SEND — zwykłe uruchomienie (tekst jest w schowku).
         val intent = sendIntent ?: launcherIntent(context, pkg) ?: return false
-        intent.addFlags(
-            Intent.FLAG_ACTIVITY_NEW_TASK or
-                Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT or
-                Intent.FLAG_ACTIVITY_MULTIPLE_TASK
-        )
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (windowMode == "split") intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
 
         val dm = context.resources.displayMetrics
-        // Prawa połowa ekranu — po lewej zostaje czytnik.
-        val bounds = Rect(dm.widthPixels / 2, dm.heightPixels / 8, dm.widthPixels - 16, dm.heightPixels * 7 / 8)
+        // Prawa część ekranu — po lewej zostaje czytnik.
+        val bounds = Rect(dm.widthPixels * 45 / 100, dm.heightPixels / 10, dm.widthPixels - 24, dm.heightPixels * 85 / 100)
         val options = ActivityOptions.makeBasic().setLaunchBounds(bounds)
+        if (windowMode == "freeform") setFreeform(options)
 
         return try {
             context.startActivity(intent, options.toBundle())

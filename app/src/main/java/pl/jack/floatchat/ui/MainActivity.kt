@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 3.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 4.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -166,6 +166,35 @@ class MainActivity : ComponentActivity() {
             }
             ToggleRow("Otwieraj natywną aplikację zamiast okna", nativeMode && pkg != null, enabled = pkg != null) {
                 nativeMode = it; prefs.nativeMode = it
+            }
+            var windowMode by remember { mutableStateOf(prefs.windowMode) }
+            val freeform = remember(tick) { NativeAppLauncher.isFreeformEnabled(this@MainActivity) }
+            Text("Sposób otwarcia:", fontWeight = FontWeight.Bold)
+            listOf("freeform" to "Pływające okno (okna swobodne)", "split" to "Podział ekranu").forEach { (id, label) ->
+                Row(
+                    Modifier.fillMaxWidth().selectable(selected = windowMode == id) {
+                        windowMode = id; prefs.windowMode = id
+                    }.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = windowMode == id, onClick = null)
+                    Text(label, Modifier.padding(start = 12.dp), fontSize = 17.sp)
+                }
+            }
+            if (windowMode == "freeform") {
+                Text(
+                    if (freeform) "✓ Okna swobodne są włączone w systemie."
+                    else "✗ Okna swobodne są wyłączone — aplikacja otworzy się na pełnym ekranie.\n" +
+                        "Włącz: Opcje programisty → „Enable freeform windows” (oraz „Force activities to be resizable”), " +
+                        "potem uruchom Boox ponownie. Przed testem zamknij ChatGPT z listy ostatnich aplikacji."
+                )
+                OutlinedButton(
+                    onClick = {
+                        runCatching { startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)) }
+                            .onFailure { startActivity(Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)) }
+                    },
+                    border = BorderStroke(2.dp, Color.Black),
+                ) { Text("Otwórz opcje programisty") }
             }
             if (showPicker) {
                 val apps = remember { NativeAppLauncher.listLaunchableApps(this@MainActivity) }

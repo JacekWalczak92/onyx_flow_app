@@ -38,6 +38,11 @@ class Prefs(context: Context) {
         get() = sp.getString("native_package", "")!!
         set(v) = sp.edit().putString("native_package", v).apply()
 
+    /** Jak otwierać natywną aplikację: "freeform" (pływające okno) albo "split" (podział ekranu). */
+    var windowMode: String
+        get() = sp.getString("window_mode", "freeform")!!
+        set(v) = sp.edit().putString("window_mode", v).apply()
+
     var bubbleX: Int
         get() = sp.getInt("bubble_x", -1)
         set(v) = sp.edit().putInt("bubble_x", v).apply()

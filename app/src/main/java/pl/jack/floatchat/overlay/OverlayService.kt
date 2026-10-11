@@ -105,7 +105,7 @@ class OverlayService : Service() {
     private fun expand() {
         if (prefs.nativeMode) {
             val pkg = NativeAppLauncher.resolvePackage(this, prefs)
-            if (pkg != null && NativeAppLauncher.launch(this, pkg)) { showBubble(); return }
+            if (pkg != null && NativeAppLauncher.launch(this, pkg, null, prefs.windowMode)) { showBubble(); return }
             Toast.makeText(this, "Nie udało się otworzyć aplikacji — używam okna", Toast.LENGTH_SHORT).show()
         }
         hideBubble()
@@ -126,7 +126,7 @@ class OverlayService : Service() {
 
         if (prefs.nativeMode) {
             val pkg = NativeAppLauncher.resolvePackage(this, prefs)
-            if (pkg != null && NativeAppLauncher.launch(this, pkg, text)) { showBubble(); return }
+            if (pkg != null && NativeAppLauncher.launch(this, pkg, text, prefs.windowMode)) { showBubble(); return }
         }
         expand()
         // Mała zwłoka, żeby okno zdążyło się podpiąć; skrypt i tak czeka na pole tekstowe.

@@ -12,8 +12,8 @@ android {
         applicationId = "pl.jack.floatchat"
         minSdk = 29          // Boox Note Air 5C = Android 13+, ale zostawiamy zapas
         targetSdk = 35
-        versionCode = 3
-        versionName = "3.0.0"   // FloatChat_v3
+        versionCode = 4
+        versionName = "4.0.0"   // FloatChat_v4
     }
 
     // Stały klucz w repo (aplikacja prywatna, sideload) — dzięki temu APK z GitHub Actions
@@ -55,4 +55,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.webkit:webkit:1.12.1")
+    // Dostęp do ukrytego ActivityOptions.setLaunchWindowingMode (okno swobodne) bez roota
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
 }
