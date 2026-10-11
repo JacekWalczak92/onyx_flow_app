@@ -26,6 +26,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.Toast
 import pl.jack.floatchat.R
+import pl.jack.floatchat.data.Diagnostics
 import pl.jack.floatchat.data.Prefs
 import pl.jack.floatchat.ui.MainActivity
 import kotlin.math.abs
@@ -78,21 +79,43 @@ class OverlayService : Service() {
         prefs = Prefs(this)
         startInForeground()
         isRunning = true
+        Watchdog.schedule(this)
+    }
+
+    /** Usunięcie FloatChat z listy ostatnich aplikacji zabija usługę na części systemów — wstań za chwilę. */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        Diagnostics.log(this, "Zadanie usunięte z ostatnich aplikacji")
+        if (prefs.bubbleWanted) Watchdog.restartSoon(this)
+        super.onTaskRemoved(rootIntent)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_STOP -> { stopSelf(); return START_NOT_STICKY }
+            ACTION_STOP -> {
+                prefs.bubbleWanted = false
+                Diagnostics.log(this, "Zamknięty przez użytkownika")
+                stopSelf(); return START_NOT_STICKY
+            }
             ACTION_OPEN -> expand()
             ACTION_TOGGLE -> if (panel?.isShown == true) minimize() else expand()
             ACTION_INJECT -> intent.getStringExtra(EXTRA_TEXT)?.let { injectText(it) } ?: expand()
-            else -> showBubble()
+            else -> {
+                if (intent == null) Diagnostics.log(this, "Usługa wznowiona przez system po ubiciu")
+                showBubble()
+            }
         }
+        if (intent?.action != ACTION_STOP) prefs.bubbleWanted = true
         return START_STICKY
     }
 
     override fun onDestroy() {
         isRunning = false
+        if (prefs.bubbleWanted) {
+            Diagnostics.log(this, "Usługa zatrzymana nieoczekiwanie — watchdog ją przywróci")
+            Watchdog.restartSoon(this)
+        } else {
+            Watchdog.cancel(this)
+        }
         hideNativeMenu()
         bubble?.let { runCatching { wm.removeView(it) } }
         bubble = null
@@ -106,7 +129,7 @@ class OverlayService : Service() {
     private fun expand() {
         if (prefs.nativeMode && tryOpenNative(null, prefs.windowSize)) { showBubble(); return }
         hideBubble()
-        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { stopSelf() }).also { panel = it }
+        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { prefs.bubbleWanted = false; stopSelf() }).also { panel = it }
         p.reloadProviderIfChanged()
         p.show()
     }
@@ -187,6 +210,7 @@ class OverlayService : Service() {
             }
         }
         item("✕  Zamknij menu") { }
+        item("⏻  Zamknij FloatChat") { prefs.bubbleWanted = false; Diagnostics.log(this, "Zamknięty z menu"); stopSelf() }
 
         val dm = resources.displayMetrics
         val width = dp(300)
@@ -212,8 +236,7 @@ class OverlayService : Service() {
             }
             false
         }
-        wm.addView(column, params)
-        menu = column
+        if (runCatching { wm.addView(column, params) }.isSuccess) menu = column
     }
 
     private fun hideNativeMenu() {
@@ -261,7 +284,7 @@ class OverlayService : Service() {
     /** Okno strony (WebView) — także jako zapas, gdy natywna aplikacja nie działa. */
     private fun openWebPanel(textToInject: String? = null) {
         hideBubble()
-        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { stopSelf() }).also { panel = it }
+        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { prefs.bubbleWanted = false; stopSelf() }).also { panel = it }
         p.reloadProviderIfChanged()
         p.show()
         textToInject?.let { t -> handler.postDelayed({ panel?.injectText(t) }, 250) }
@@ -270,7 +293,7 @@ class OverlayService : Service() {
     /** Jednorazowo otwiera panel ze stroną, nawet w trybie natywnym. */
     private fun forceWebPanel() {
         hideBubble()
-        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { stopSelf() }).also { panel = it }
+        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { prefs.bubbleWanted = false; stopSelf() }).also { panel = it }
         p.reloadProviderIfChanged()
         p.show()
     }
@@ -306,10 +329,14 @@ class OverlayService : Service() {
         var startX = 0f; var startY = 0f; var origX = 0; var origY = 0
         var moved = false; var downTime = 0L
         val slop = (10 * d).toInt()
+        // v9: przytrzymanie NIE zamyka już FloatChat (na e-inku dotyk łatwo trwa dłużej) —
+        // otwiera menu. Zamykanie: menu → „Zamknij FloatChat" albo powiadomienie.
+        var longPressed = false
         val longPress = Runnable {
             if (!moved) {
-                Toast.makeText(this, "FloatChat zamknięty", Toast.LENGTH_SHORT).show()
-                stopSelf()
+                longPressed = true
+                handler.removeCallbacks(singleTap)
+                toggleNativeMenu()
             }
         }
 
@@ -318,7 +345,7 @@ class OverlayService : Service() {
                 MotionEvent.ACTION_DOWN -> {
                     startX = e.rawX; startY = e.rawY
                     origX = bubbleParams.x; origY = bubbleParams.y
-                    moved = false; downTime = e.eventTime
+                    moved = false; downTime = e.eventTime; longPressed = false
                     handler.postDelayed(longPress, 900)
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -328,14 +355,14 @@ class OverlayService : Service() {
                         handler.removeCallbacks(longPress)
                         bubbleParams.x = max(0, origX + dx)
                         bubbleParams.y = max(0, origY + dy)
-                        bubble?.let { wm.updateViewLayout(it, bubbleParams) }
+                        bubble?.let { runCatching { wm.updateViewLayout(it, bubbleParams) } }
                     }
                 }
                 MotionEvent.ACTION_UP -> {
                     handler.removeCallbacks(longPress)
                     if (moved) {
                         prefs.bubbleX = bubbleParams.x; prefs.bubbleY = bubbleParams.y
-                    } else if (e.eventTime - downTime < 900) {
+                    } else if (!longPressed) {
                         onBubbleTap()
                     }
                 }
@@ -344,8 +371,7 @@ class OverlayService : Service() {
             true
         }
 
-        wm.addView(view, bubbleParams)
-        bubble = view
+        if (runCatching { wm.addView(view, bubbleParams) }.isSuccess) bubble = view
     }
 
     // Pojedyncze dotknięcie = otwórz okno; podwójne = menu.
@@ -367,7 +393,7 @@ class OverlayService : Service() {
     }
 
     private fun hideBubble() {
-        bubble?.let { wm.removeView(it) }
+        bubble?.let { runCatching { wm.removeView(it) } }
         bubble = null
     }
 

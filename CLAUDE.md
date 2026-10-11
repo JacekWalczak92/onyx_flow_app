@@ -18,6 +18,7 @@ app/src/main/java/pl/jack/floatchat/
 │   ├── OverlayService.kt   usługa FGS (specialUse): bąbel + panel, akcje SHOW/OPEN/TOGGLE/INJECT/STOP
 │   ├── ChatPanel.kt        okno WebView: przeciąganie, resize, fokus klawiatury, kolejka tekstu
 │   ├── TextInjector.kt     JS wklejający tekst do pola (execCommand insertText, retry 8 s)
+│   ├── Watchdog.kt          strażnik bąbla (AlarmManager) + WatchdogReceiver
 │   ├── NativeAppLauncher.kt eksperyment: natywna app obok (LAUNCH_ADJACENT + setLaunchBounds)
 │   └── BubbleTileService.kt kafelek szybkich ustawień
 └── ui/
@@ -49,6 +50,9 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
+v9 (9.0.0) — stabilność bąbla: przytrzymanie = menu (nie zamyka), zamykanie tylko świadome (bubbleWanted),
+Watchdog (AlarmManager co 60 s + BOOT/MY_PACKAGE_REPLACED + onTaskRemoved), zapis błędów (FloatChatApp),
+dziennik w ustawieniach, prośba o wyłączenie optymalizacji baterii, runCatching wokół WindowManager.
 v8 (8.0.0) — wykrywanie zamrożonej (wyłączonej) natywnej aplikacji, automatyczny zapas: okno strony;
 skrót do ustawień aplikacji (menu bąbla i ekran ustawień).
 v7 (7.0.0) — bąbel: 1× dotknięcie = otwórz okno, 2× = menu (okno 400 ms na drugie dotknięcie).

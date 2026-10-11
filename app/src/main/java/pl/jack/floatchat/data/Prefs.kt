@@ -58,6 +58,11 @@ class Prefs(context: Context) {
         get() = sp.getString("last_source_package", "")!!
         set(v) = sp.edit().putString("last_source_package", v).apply()
 
+    /** Użytkownik chce mieć bąbel (false tylko po świadomym zamknięciu) — watchdog go przywraca. */
+    var bubbleWanted: Boolean
+        get() = sp.getBoolean("bubble_wanted", false)
+        set(v) = sp.edit().putBoolean("bubble_wanted", v).apply()
+
     var bubbleX: Int
         get() = sp.getInt("bubble_x", -1)
         set(v) = sp.edit().putInt("bubble_x", v).apply()

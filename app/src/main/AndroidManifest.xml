@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Aplikacja prywatna (sideload): pełna lista aplikacji, by znaleźć natywny czat -->
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
@@ -19,6 +21,7 @@
     </queries>
 
     <application
+        android:name=".FloatChatApp"
         android:allowBackup="true"
         android:icon="@drawable/ic_bubble"
         android:label="@string/app_name"
@@ -64,6 +67,16 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Floating chat bubble overlay shown above other apps" />
         </service>
+
+        <!-- Strażnik: przywraca bąbel po ubiciu przez system, po restarcie i po aktualizacji -->
+        <receiver
+            android:name=".overlay.WatchdogReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Kafelek w szybkich ustawieniach: włącz/wyłącz bąbel -->
         <service

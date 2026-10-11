@@ -48,10 +48,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import pl.jack.floatchat.data.Diagnostics
 import pl.jack.floatchat.data.Prefs
 import pl.jack.floatchat.data.Providers
 import pl.jack.floatchat.overlay.NativeAppLauncher
 import pl.jack.floatchat.overlay.OverlayService
+import pl.jack.floatchat.overlay.Watchdog
 
 /** Ekran startowy: uprawnienia, wybór serwisu, uruchomienie bąbla. Styl czarno-biały pod e-ink. */
 class MainActivity : ComponentActivity() {
@@ -78,6 +80,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshTick++ // odśwież status uprawnień po powrocie z ustawień systemu
+        Watchdog.ensureRunning(this, "otwarcie ustawień")
     }
 
     @Composable
@@ -98,7 +101,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 8.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 9.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -298,12 +301,55 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth().height(56.dp),
             ) { Text("Zamknij bąbel", fontSize = 18.sp) }
 
+            Section("6. Działanie w tle")
+            val pm = remember { getSystemService(android.os.PowerManager::class.java) }
+            val ignoringBattery = remember(tick) { pm.isIgnoringBatteryOptimizations(packageName) }
+            Text(
+                if (ignoringBattery) "✓ FloatChat jest wyłączony z optymalizacji baterii."
+                else "✗ System może usypiać FloatChat — bąbel będzie znikał."
+            )
+            if (!ignoringBattery) {
+                OutlinedButton(
+                    onClick = {
+                        runCatching {
+                            startActivity(
+                                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))
+                            )
+                        }
+                    },
+                    border = BorderStroke(2.dp, Color.Black),
+                ) { Text("Wyłącz optymalizację baterii") }
+            }
+            Text(
+                "Na Boox dodatkowo: przytrzymaj ikonę FloatChat (lub Ustawienia → Aplikacje) i wyłącz " +
+                    "zamrażanie oraz czyszczenie w tle. Jeśli bąbel mimo to zniknie, strażnik przywróci go " +
+                    "w ciągu ok. minuty. Zamykanie bąbla: 2× bąbel → „Zamknij FloatChat”."
+            )
+            OutlinedButton(
+                onClick = { NativeAppLauncher.openAppDetails(this@MainActivity, packageName) },
+                border = BorderStroke(2.dp, Color.Black),
+            ) { Text("Ustawienia aplikacji FloatChat") }
+
+            Section("Diagnostyka")
+            var diagTick by remember { mutableIntStateOf(0) }
+            val log = remember(tick, diagTick) { Diagnostics.logText(this@MainActivity) }
+            val crash = remember(tick, diagTick) { Diagnostics.crashText(this@MainActivity) }
+            Text(if (log.isBlank()) "Brak zdarzeń." else log, fontSize = 13.sp)
+            if (crash.isNotBlank()) {
+                Text("Ostatni błąd:", fontWeight = FontWeight.Bold)
+                Text(crash, fontSize = 12.sp)
+            }
+            OutlinedButton(
+                onClick = { Diagnostics.clear(this@MainActivity); diagTick++ },
+                border = BorderStroke(2.dp, Color.Black),
+            ) { Text("Wyczyść dziennik") }
+
             Section("Jak używać")
             Text(
                 "• W czytniku zaznacz tekst → w menu wybierz „Zapytaj AI” (lub Udostępnij → FloatChat). " +
                     "Okno otworzy się z wklejonym tekstem.\n" +
                     "• Albo skopiuj tekst i w oknie dotknij „Wklej”.\n" +
-                    "• „—” minimalizuje do bąbla, rozmowa zostaje. Dwa dotknięcia bąbla = menu. Przytrzymaj bąbel, by zamknąć.\n" +
+                    "• „—” minimalizuje do bąbla, rozmowa zostaje. Dwa dotknięcia lub przytrzymanie bąbla = menu (tam też „Zamknij FloatChat”).\n" +
                     "• Przeciągaj okno za pasek tytułu, zmieniaj rozmiar uchwytem ◢. Dotknij nazwy serwisu, aby przełączyć.\n" +
                     "• Logowanie: użyj e-maila i hasła — logowanie „przez Google” w oknie WebView jest blokowane przez Google.\n" +
                     "• Kafelek „FloatChat” możesz dodać do szybkich ustawień."

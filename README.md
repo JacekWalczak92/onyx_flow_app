@@ -1,4 +1,4 @@
-# FloatChat v8
+# FloatChat v9
 
 Pływające okno czatu AI dla Onyx Boox. Czytasz książkę, zaznaczasz fragment → **Zapytaj AI** →
 obok otwiera się okno z ChatGPT (lub Claude/Gemini/Perplexity) z wklejonym tekstem. Piszesz,
@@ -23,9 +23,8 @@ Błędy kompilacji: zakładka **Actions** → nieudany build → log.
 | Gest | Działanie |
 |---|---|
 | Dotknij bąbla | otwórz okno |
-| Dotknij bąbla 2× | menu (zmniejsz okno, rozmiar, powrót do czytnika) |
+| Dotknij bąbla 2× lub przytrzymaj | menu (zmniejsz okno, rozmiar, powrót do czytnika, zamknij FloatChat) |
 | Przeciągnij bąbel | przesuń |
-| Przytrzymaj bąbel ~1 s | zamknij FloatChat |
 | Pasek tytułu | przeciąganie okna; dotknięcie nazwy = następny serwis |
 | **Wklej** | wkleja schowek do pola czatu |
 | **—** | minimalizuj (rozmowa zostaje) |
@@ -33,7 +32,8 @@ Błędy kompilacji: zakładka **Actions** → nieudany build → log.
 | Wstecz | cofnij w stronie / minimalizuj |
 
 **Boox:** w ustawieniach aplikacji FloatChat (Optymalizacja aplikacji / App Management) wyłącz
-zamrażanie w tle, inaczej system może zamknąć bąbel.
+zamrażanie w tle i optymalizację baterii, inaczej system może zamknąć bąbel. Gdy mimo to zniknie,
+strażnik (alarm co ~1 min) przywraca go automatycznie; dziennik zdarzeń jest w ustawieniach → Diagnostyka.
 
 **Zamrażanie ChatGPT:** jeśli natywny ChatGPT czasem się nie otwiera, Boox zamroził go w tle.
 Wyłącz zamrażanie i optymalizację baterii dla ChatGPT (2× bąbel → Ustawienia ChatGPT). Do tego czasu
@@ -45,7 +45,7 @@ jest blokowane przez Google.
 ## Tryb natywnej aplikacji — menu bąbla
 Jedno dotknięcie bąbla otwiera okno czatu, **dwa dotknięcia** otwierają menu:
 **Otwórz / zmniejsz** (przywraca okienko także z pełnego ekranu), **Małe / Duże okienko**,
-**Wróć do czytnika**, **Okno strony**. Przytrzymanie bąbla zamyka FloatChat.
+**Wróć do czytnika**, **Okno strony**. Zamknięcie: menu → **Zamknij FloatChat** (przytrzymanie bąbla też otwiera menu).
 
 ## Natywna aplikacja ChatGPT?
 Android nie pozwala wyświetlić innej aplikacji wewnątrz naszego pływającego okna. Opcja
