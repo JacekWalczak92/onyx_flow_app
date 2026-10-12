@@ -129,10 +129,17 @@ class OverlayService : Service() {
     private fun expand() {
         if (prefs.nativeMode && tryOpenNative(null, prefs.windowSize)) { showBubble(); return }
         hideBubble()
-        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { prefs.bubbleWanted = false; stopSelf() }).also { panel = it }
+        val p = ensurePanel()
         p.reloadProviderIfChanged()
         p.show()
     }
+
+    private fun ensurePanel(): ChatPanel = panel ?: ChatPanel(
+        this, wm, prefs,
+        onMinimize = ::minimize,
+        onClose = { prefs.bubbleWanted = false; stopSelf() },
+        onScreenshot = { takeScreenshot(toNative = false) },
+    ).also { panel = it }
 
     private fun minimize() {
         panel?.hide()
@@ -203,6 +210,7 @@ class OverlayService : Service() {
                 }
             }
         }
+        if (chatPkg != null) item("📷  Zrzut ekranu → $chatLabel") { takeScreenshot(toNative = true) }
         item("⌂  Okno strony (WebView)") { forceWebPanel() }
         if (chatPkg != null) {
             if (!NativeAppLauncher.isEnabled(this, chatPkg)) {
@@ -283,10 +291,69 @@ class OverlayService : Service() {
         return false
     }
 
+    // ---------------------------------------------------------------- zrzut ekranu
+
+    /**
+     * 📷: chowa okna FloatChat, robi zdjęcie ekranu pod nimi (usługa ułatwień dostępu),
+     * przywraca okna i przekazuje zdjęcie: do pola czatu na stronie albo do natywnej aplikacji.
+     * Zawsze też kopiuje je do schowka (awaryjnie: przytrzymaj pole czatu → Wklej).
+     */
+    private fun takeScreenshot(toNative: Boolean) {
+        if (!ScreenshotService.isEnabled) {
+            Toast.makeText(
+                this, "Włącz w Ułatwieniach dostępu: „FloatChat — zrzut ekranu”", Toast.LENGTH_LONG,
+            ).show()
+            ScreenshotService.openSettings(this)
+            return
+        }
+        val panelWasShown = panel?.isShown == true
+        val bubbleWasShown = bubble != null
+        hideNativeMenu()
+        panel?.hide()
+        hideBubble()
+        // Chwila, żeby system przerysował ekran bez naszych okien.
+        handler.postDelayed({
+            ScreenshotService.capture(this) { bitmap ->
+                if (bubbleWasShown) showBubble()
+                if (panelWasShown) panel?.show()
+                if (bitmap == null) {
+                    Toast.makeText(this, "Nie udało się zrobić zrzutu ekranu", Toast.LENGTH_SHORT).show()
+                    return@capture
+                }
+                Thread {
+                    val shot = runCatching { Screenshots.save(this, bitmap) }.getOrNull()
+                    bitmap.recycle()
+                    handler.post { if (shot != null) deliverScreenshot(shot, toNative) }
+                }.start()
+            }
+        }, 400)
+    }
+
+    private fun deliverScreenshot(shot: Screenshots.Shot, toNative: Boolean) {
+        runCatching {
+            getSystemService(ClipboardManager::class.java)
+                .setPrimaryClip(ClipData.newUri(contentResolver, "Zrzut ekranu", shot.uri))
+        }
+        if (toNative) {
+            val pkg = NativeAppLauncher.resolvePackage(this, prefs)
+            val ok = pkg != null && NativeAppLauncher.isEnabled(this, pkg) &&
+                NativeAppLauncher.acceptsImage(this, pkg) &&
+                NativeAppLauncher.launch(this, pkg, windowMode = prefs.windowMode, size = prefs.windowSize, imageUri = shot.uri)
+            Toast.makeText(
+                this,
+                if (ok) "Zrzut ekranu wysłany do czatu" else "Zrzut ekranu jest w schowku — wklej go w czacie",
+                Toast.LENGTH_SHORT,
+            ).show()
+        } else {
+            panel?.injectImage(android.util.Base64.encodeToString(shot.bytes, android.util.Base64.NO_WRAP))
+            Toast.makeText(this, "Zrzut ekranu dodany do wiadomości", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     /** Okno strony (WebView) — także jako zapas, gdy natywna aplikacja nie działa. */
     private fun openWebPanel(textToInject: String? = null) {
         hideBubble()
-        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { prefs.bubbleWanted = false; stopSelf() }).also { panel = it }
+        val p = ensurePanel()
         p.reloadProviderIfChanged()
         p.show()
         textToInject?.let { t -> handler.postDelayed({ panel?.injectText(t) }, 250) }
@@ -295,7 +362,7 @@ class OverlayService : Service() {
     /** Jednorazowo otwiera panel ze stroną, nawet w trybie natywnym. */
     private fun forceWebPanel() {
         hideBubble()
-        val p = panel ?: ChatPanel(this, wm, prefs, onMinimize = ::minimize, onClose = { prefs.bubbleWanted = false; stopSelf() }).also { panel = it }
+        val p = ensurePanel()
         p.reloadProviderIfChanged()
         p.show()
     }

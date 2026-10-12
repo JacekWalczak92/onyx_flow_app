@@ -62,6 +62,12 @@ object NativeAppLauncher {
         false
     }
 
+    /** Czy aplikacja przyjmuje obraz przez „Udostępnij" (ACTION_SEND z obrazem). */
+    fun acceptsImage(context: Context, pkg: String): Boolean {
+        val i = Intent(Intent.ACTION_SEND).setType("image/jpeg").setPackage(pkg)
+        return context.packageManager.queryIntentActivities(i, PackageManager.MATCH_ALL).isNotEmpty()
+    }
+
     /** Systemowa strona aplikacji (tam / w ustawieniach Boox wyłącza się zamrażanie i optymalizację). */
     fun openAppDetails(context: Context, pkg: String) {
         val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$pkg"))
@@ -181,9 +187,19 @@ object NativeAppLauncher {
         text: String? = null,
         windowMode: String = "freeform",
         size: String = "medium",
+        imageUri: android.net.Uri? = null,
     ): Boolean {
         val pm = context.packageManager
-        val sendIntent = text?.let {
+        val imageIntent = imageUri?.let { uri ->
+            Intent(Intent.ACTION_SEND).apply {
+                type = "image/jpeg"
+                setPackage(pkg)
+                putExtra(Intent.EXTRA_STREAM, uri)
+                clipData = android.content.ClipData.newRawUri("", uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }.takeIf { i -> pm.queryIntentActivities(i, PackageManager.MATCH_ALL).isNotEmpty() }
+        }
+        val sendIntent = imageIntent ?: text?.let {
             Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 setPackage(pkg)

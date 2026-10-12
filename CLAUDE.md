@@ -50,6 +50,10 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
+v12 (12.0.0) — 📷 zrzut ekranu pod oknem: ScreenshotService (AccessibilityService.takeScreenshot, tylko zrzut),
+chowa okna FloatChat → zrzut → przywraca; okno strony: wklejenie przez zdarzenie paste z plikiem (zapas: input file),
+natywny czat: ACTION_SEND image/jpeg (FileProvider `${applicationId}.files`); zawsze też do schowka.
+Włączenie usługi przez adb: appops ACCESS_RESTRICTED_SETTINGS allow + settings secure enabled_accessibility_services.
 v11 (11.0.0) — mikrofon w oknie strony: RECORD_AUDIO + WebChromeClient.onPermissionRequest (wcześniej WebView
 po cichu odrzucał mikrofon), MicPermissionActivity pyta o uprawnienie (nakładka sama nie może).
 v10 (10.0.0) — przyczyna znikania bąbla: Boox „Blokowanie aplikacji” (EAC auto-freeze) przy uśpieniu

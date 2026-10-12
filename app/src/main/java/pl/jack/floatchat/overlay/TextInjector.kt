@@ -56,4 +56,44 @@ object TextInjector {
         """.trimIndent()
         webView.evaluateJavascript(js) { result -> onResult(result == "true") }
     }
+
+    /**
+     * Wkleja obraz (zrzut ekranu) do rozmowy: najpierw jak Ctrl+V (zdarzenie paste z plikiem
+     * w polu czatu — ChatGPT/Claude/Gemini to obsługują), a gdy strona go nie przejmie —
+     * przez ukryte pole wyboru pliku (input type=file).
+     */
+    fun injectImage(webView: WebView, selector: String, base64: String, mime: String, fileName: String) {
+        val js = """
+            (function(){
+              var sel = ${JSONObject.quote(selector)};
+              var bin = atob(${JSONObject.quote(base64)});
+              var bytes = new Uint8Array(bin.length);
+              for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+              var file = new File([bytes], ${JSONObject.quote(fileName)}, {type: ${JSONObject.quote(mime)}});
+              var tries = 0;
+              function attempt(){
+                var el = document.querySelector(sel);
+                if (!el) {
+                  if (++tries < 40) { setTimeout(attempt, 200); }
+                  return;
+                }
+                el.focus();
+                var dt = new DataTransfer(); dt.items.add(file);
+                var ev = new ClipboardEvent('paste', {clipboardData: dt, bubbles: true, cancelable: true});
+                el.dispatchEvent(ev);
+                if (!ev.defaultPrevented) {
+                  var input = document.querySelector("input[type='file'][accept*='image']") ||
+                              document.querySelector("input[type='file']");
+                  if (input) {
+                    var dt2 = new DataTransfer(); dt2.items.add(file);
+                    input.files = dt2.files;
+                    input.dispatchEvent(new Event('change', {bubbles: true}));
+                  }
+                }
+              }
+              attempt();
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(js, null)
+    }
 }

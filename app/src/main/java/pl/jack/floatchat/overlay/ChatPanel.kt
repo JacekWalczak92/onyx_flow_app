@@ -48,6 +48,7 @@ class ChatPanel(
     private val prefs: Prefs,
     private val onMinimize: () -> Unit,
     private val onClose: () -> Unit,
+    private val onScreenshot: () -> Unit,
 ) {
     private val density = context.resources.displayMetrics.density
     private fun dp(v: Int) = (v * density).toInt()
@@ -115,6 +116,11 @@ class ChatPanel(
         val full = if (prefs.promptPrefix.isBlank()) text else prefs.promptPrefix.trim() + "\n\n" + text
         if (pageLoaded) TextInjector.inject(webView, provider.inputSelector, full, prefs.autoSend) { }
         else pendingText = full
+    }
+
+    /** Wkleja zrzut ekranu (JPEG w base64) do pola czatu. */
+    fun injectImage(base64: String) {
+        TextInjector.injectImage(webView, provider.inputSelector, base64, "image/jpeg", "zrzut-ekranu.jpg")
     }
 
     fun reloadProviderIfChanged() {
@@ -230,6 +236,7 @@ class ChatPanel(
         header.addView(titleView, LinearLayout.LayoutParams(0, dp(48), 1f).apply { gravity = Gravity.CENTER_VERTICAL })
         titleView.gravity = Gravity.CENTER_VERTICAL
 
+        header.addView(headerButton("📷") { onScreenshot() })
         header.addView(headerButton("Wklej") { pasteFromClipboard() })
         header.addView(headerButton("⟳") { webView.reload() })
         header.addView(headerButton("—") { onMinimize() })

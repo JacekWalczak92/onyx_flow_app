@@ -53,6 +53,7 @@ import pl.jack.floatchat.data.Prefs
 import pl.jack.floatchat.data.Providers
 import pl.jack.floatchat.overlay.NativeAppLauncher
 import pl.jack.floatchat.overlay.OverlayService
+import pl.jack.floatchat.overlay.ScreenshotService
 import pl.jack.floatchat.overlay.Watchdog
 
 /** Ekran startowy: uprawnienia, wybór serwisu, uruchomienie bąbla. Styl czarno-biały pod e-ink. */
@@ -101,7 +102,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 11.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 12.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -339,6 +340,21 @@ class MainActivity : ComponentActivity() {
                     onClick = { NativeAppLauncher.openAppDetails(this@MainActivity, packageName) },
                     border = BorderStroke(2.dp, Color.Black),
                 ) { Text("Ustawienia aplikacji FloatChat") }
+            }
+
+            Section("7. Zrzut ekranu (📷)")
+            val shotEnabled = remember(tick) { ScreenshotService.isEnabled }
+            Text(
+                if (shotEnabled) "✓ Zrzut ekranu działa: 📷 w pasku okna strony albo 2× bąbel → „Zrzut ekranu”."
+                else "✗ Włącz w Ułatwieniach dostępu usługę „FloatChat — zrzut ekranu”. Służy tylko do " +
+                    "zdjęcia ekranu pod oknem czatu. Jeśli jest wyszarzona: Ustawienia aplikacji FloatChat → ⋮ → " +
+                    "„Zezwól na ustawienia z ograniczeniami”."
+            )
+            if (!shotEnabled) {
+                OutlinedButton(
+                    onClick = { ScreenshotService.openSettings(this@MainActivity) },
+                    border = BorderStroke(2.dp, Color.Black),
+                ) { Text("Ułatwienia dostępu") }
             }
 
             Section("Diagnostyka")
