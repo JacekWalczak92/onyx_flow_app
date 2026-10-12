@@ -1,8 +1,11 @@
 package pl.jack.floatchat.overlay
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
@@ -13,6 +16,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.CookieManager
+import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -25,6 +29,7 @@ import android.widget.Toast
 import pl.jack.floatchat.data.ChatProvider
 import pl.jack.floatchat.data.Prefs
 import pl.jack.floatchat.data.Providers
+import pl.jack.floatchat.ui.MicPermissionActivity
 import kotlin.math.max
 import kotlin.math.min
 
@@ -165,7 +170,24 @@ class ChatPanel(
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
         overScrollMode = View.OVER_SCROLL_NEVER
-        webChromeClient = WebChromeClient()
+        webChromeClient = object : WebChromeClient() {
+            // Bez tego WebView po cichu odrzuca mikrofon — przycisk nagrywania „nie reaguje".
+            override fun onPermissionRequest(request: PermissionRequest) {
+                if (PermissionRequest.RESOURCE_AUDIO_CAPTURE !in request.resources) {
+                    request.deny(); return
+                }
+                val granted = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                    PackageManager.PERMISSION_GRANTED
+                if (granted) {
+                    request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+                } else {
+                    request.deny()
+                    context.startActivity(
+                        Intent(context, MicPermissionActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }
+            }
+        }
         webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = false
 

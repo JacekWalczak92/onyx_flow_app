@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 10.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 11.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {

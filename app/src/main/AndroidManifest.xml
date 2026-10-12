@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Nagrywanie głosowe na stronie czatu (WebView) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Aplikacja prywatna (sideload): pełna lista aplikacji, by znaleźć natywny czat -->
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
@@ -58,6 +61,15 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+
+        <!-- Pytanie o mikrofon dla okna strony (nakładka sama nie może o nie poprosić) -->
+        <activity
+            android:name=".ui.MicPermissionActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.FloatChat.Invisible" />
 
         <service
             android:name=".overlay.OverlayService"

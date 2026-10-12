@@ -50,6 +50,8 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
+v11 (11.0.0) — mikrofon w oknie strony: RECORD_AUDIO + WebChromeClient.onPermissionRequest (wcześniej WebView
+po cichu odrzucał mikrofon), MicPermissionActivity pyta o uprawnienie (nakładka sama nie może).
 v10 (10.0.0) — przyczyna znikania bąbla: Boox „Blokowanie aplikacji” (EAC auto-freeze) przy uśpieniu
 wymusza zatrzymanie i wyłącza (pm disable) FloatChat i ChatGPT — Watchdog nie pomoże (force-stop kasuje alarmy).
 Przyciski do ekranu Boox (`onyx.settings.action.APP_FREEZE_MANAGEMENT`), pozycja „zamrożony — odblokuj” w menu bąbla,
