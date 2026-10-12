@@ -50,6 +50,10 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
+v10 (10.0.0) — przyczyna znikania bąbla: Boox „Blokowanie aplikacji” (EAC auto-freeze) przy uśpieniu
+wymusza zatrzymanie i wyłącza (pm disable) FloatChat i ChatGPT — Watchdog nie pomoże (force-stop kasuje alarmy).
+Przyciski do ekranu Boox (`onyx.settings.action.APP_FREEZE_MANAGEMENT`), pozycja „zamrożony — odblokuj” w menu bąbla,
+dziennik zapisuje przyczynę śmierci procesu (ApplicationExitInfo).
 v9 (9.0.0) — stabilność bąbla: przytrzymanie = menu (nie zamyka), zamykanie tylko świadome (bubbleWanted),
 Watchdog (AlarmManager co 60 s + BOOT/MY_PACKAGE_REPLACED + onTaskRemoved), zapis błędów (FloatChatApp),
 dziennik w ustawieniach, prośba o wyłączenie optymalizacji baterii, runCatching wokół WindowManager.

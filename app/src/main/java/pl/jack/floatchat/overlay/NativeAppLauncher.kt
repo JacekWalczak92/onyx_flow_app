@@ -69,6 +69,16 @@ object NativeAppLauncher {
         runCatching { context.startActivity(i) }
     }
 
+    /**
+     * Ekran Boox „Blokowanie aplikacji" (Ustawienia → Aplikacje). Włączona blokada = Boox przy
+     * uśpieniu wymusza zatrzymanie aplikacji i ją wyłącza (zamraża) — bąbel znika, natywny czat
+     * przestaje się otwierać. Gdy ekranu nie ma (inny firmware) — systemowa strona aplikacji.
+     */
+    fun openBooxFreezeSettings(context: Context, fallbackPkg: String) {
+        val i = Intent("onyx.settings.action.APP_FREEZE_MANAGEMENT").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (runCatching { context.startActivity(i) }.isFailure) openAppDetails(context, fallbackPkg)
+    }
+
     fun labelOf(context: Context, pkg: String): String = try {
         val pm = context.packageManager
         pm.getApplicationInfo(pkg, PackageManager.MATCH_DISABLED_COMPONENTS).loadLabel(pm).toString()

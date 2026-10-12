@@ -17,5 +17,6 @@ class FloatChatApp : Application() {
             }
             previous?.uncaughtException(thread, error)
         }
+        runCatching { Diagnostics.logPreviousExit(this) }
     }
 }

@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("FloatChat", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text("Pływające okno czatu AI nad czytnikiem. Wersja 9.0.0")
+            Text("Pływające okno czatu AI nad czytnikiem. Wersja 10.0.0")
 
             Section("1. Uprawnienia")
             StatusRow("Wyświetlanie nad innymi aplikacjami", canOverlay) {
@@ -150,8 +150,9 @@ class MainActivity : ComponentActivity() {
             Text(
                 when {
                     pkg == null -> "Nie znaleziono natywnej aplikacji tego serwisu. Wybierz ją ręcznie z listy."
-                    !enabledApp -> "Znaleziono: ${NativeAppLauncher.labelOf(this@MainActivity, pkg)} ($pkg), " +
-                        "ale jest wyłączona/zamrożona. Odmroź ją w ustawieniach aplikacji Boox."
+                    !enabledApp -> "✗ Znaleziono: ${NativeAppLauncher.labelOf(this@MainActivity, pkg)} ($pkg), " +
+                        "ale Boox ją zamroził. Uruchom ją raz z pulpitu i wyłącz dla niej " +
+                        "„Blokowanie aplikacji” (przycisk niżej)."
                     else -> "Aplikacja: ${NativeAppLauncher.labelOf(this@MainActivity, pkg)} ($pkg)" +
                         (if (manualPkg.isBlank()) " — wykryta automatycznie." else " — wybrana ręcznie.") +
                         "\nBąbel otworzy ją obok czytnika (podział ekranu / okno swobodne). Zależy od firmware Boox."
@@ -175,11 +176,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
             Text(
-                "Jeśli czasem nie da się otworzyć aplikacji: Boox zamraża ją w tle. W ustawieniach Boox " +
-                    "(przytrzymaj ikonę aplikacji lub Ustawienia → Aplikacje) wyłącz dla niej zamrażanie " +
-                    "i optymalizację baterii. To samo zrób dla FloatChat. Gdy aplikacja jest niedostępna, " +
-                    "FloatChat sam otworzy okno strony."
+                "Jeśli czasem nie da się otworzyć aplikacji: Boox zamraża ją przy uśpieniu. " +
+                    "W „Blokowanie aplikacji” Boox przełącz ją oraz FloatChat na OFF. Gdy aplikacja jest " +
+                    "niedostępna, FloatChat sam otworzy okno strony."
             )
+            OutlinedButton(
+                onClick = { NativeAppLauncher.openBooxFreezeSettings(this@MainActivity, pkg ?: packageName) },
+                border = BorderStroke(2.dp, Color.Black),
+            ) { Text("Blokowanie aplikacji (Boox)") }
             ToggleRow("Otwieraj natywną aplikację zamiast okna", nativeMode && pkg != null, enabled = pkg != null) {
                 nativeMode = it; prefs.nativeMode = it
             }
@@ -321,14 +325,21 @@ class MainActivity : ComponentActivity() {
                 ) { Text("Wyłącz optymalizację baterii") }
             }
             Text(
-                "Na Boox dodatkowo: przytrzymaj ikonę FloatChat (lub Ustawienia → Aplikacje) i wyłącz " +
-                    "zamrażanie oraz czyszczenie w tle. Jeśli bąbel mimo to zniknie, strażnik przywróci go " +
-                    "w ciągu ok. minuty. Zamykanie bąbla: 2× bąbel → „Zamknij FloatChat”."
+                "Na Boox najważniejsze: Ustawienia → Aplikacje → „Blokowanie aplikacji” — przełącz FloatChat " +
+                    "(i natywny czat) na OFF. Włączona blokada = Boox przy uśpieniu zatrzymuje i zamraża " +
+                    "aplikację; wtedy znika bąbel i strażnik nie może go przywrócić. " +
+                    "Zamykanie bąbla: 2× bąbel → „Zamknij FloatChat”."
             )
-            OutlinedButton(
-                onClick = { NativeAppLauncher.openAppDetails(this@MainActivity, packageName) },
-                border = BorderStroke(2.dp, Color.Black),
-            ) { Text("Ustawienia aplikacji FloatChat") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { NativeAppLauncher.openBooxFreezeSettings(this@MainActivity, packageName) },
+                    border = BorderStroke(2.dp, Color.Black),
+                ) { Text("Blokowanie aplikacji (Boox)") }
+                OutlinedButton(
+                    onClick = { NativeAppLauncher.openAppDetails(this@MainActivity, packageName) },
+                    border = BorderStroke(2.dp, Color.Black),
+                ) { Text("Ustawienia aplikacji FloatChat") }
+            }
 
             Section("Diagnostyka")
             var diagTick by remember { mutableIntStateOf(0) }

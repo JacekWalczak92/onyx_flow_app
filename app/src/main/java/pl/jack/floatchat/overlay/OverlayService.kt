@@ -205,9 +205,10 @@ class OverlayService : Service() {
         }
         item("⌂  Okno strony (WebView)") { forceWebPanel() }
         if (chatPkg != null) {
-            item("⚙  Ustawienia $chatLabel" + if (!NativeAppLauncher.isEnabled(this, chatPkg)) " (zamrożony!)" else "") {
-                NativeAppLauncher.openAppDetails(this, chatPkg)
+            if (!NativeAppLauncher.isEnabled(this, chatPkg)) {
+                item("⚠  $chatLabel zamrożony — odblokuj") { NativeAppLauncher.openBooxFreezeSettings(this, chatPkg) }
             }
+            item("⚙  Ustawienia $chatLabel") { NativeAppLauncher.openAppDetails(this, chatPkg) }
         }
         item("✕  Zamknij menu") { }
         item("⏻  Zamknij FloatChat") { prefs.bubbleWanted = false; Diagnostics.log(this, "Zamknięty z menu"); stopSelf() }
@@ -266,7 +267,8 @@ class OverlayService : Service() {
         if (!NativeAppLauncher.isEnabled(this, pkg)) {
             Toast.makeText(
                 this,
-                "$label jest zamrożony przez Boox — otwieram okno strony. Wyłącz zamrażanie: 2× bąbel → Ustawienia $label",
+                "$label jest zamrożony przez Boox — otwieram okno strony. " +
+                    "Wyłącz blokadę: 2× bąbel → „$label zamrożony — odblokuj”",
                 Toast.LENGTH_LONG,
             ).show()
             return false
