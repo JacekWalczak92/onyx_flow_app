@@ -205,9 +205,14 @@ class OverlayService : Service() {
         }
         if (readerPkg != null) {
             item("↩  Wróć do: ${NativeAppLauncher.labelOf(this, readerPkg)}") {
-                if (!NativeAppLauncher.bringToFront(this, readerPkg)) {
-                    Toast.makeText(this, "Nie udało się otworzyć czytnika", Toast.LENGTH_SHORT).show()
+                // NeoReader nie ma ikony startowej i nie da się go przywołać z zewnątrz —
+                // zamiast tego chowamy okienko czatu (czytnik pod nim zostaje na wierzchu).
+                val minimize: (Boolean) -> Unit = { ok ->
+                    if (!ok && !NativeAppLauncher.bringToFront(this, readerPkg)) {
+                        Toast.makeText(this, "Nie udało się wrócić do czytnika", Toast.LENGTH_SHORT).show()
+                    }
                 }
+                if (chatPkg != null) ScreenshotService.minimizeWindowOf(chatPkg, minimize) else minimize(false)
             }
         }
         if (chatPkg != null) item("📷  Zrzut ekranu → $chatLabel") { takeScreenshot(toNative = true) }
@@ -311,6 +316,19 @@ class OverlayService : Service() {
         hideNativeMenu()
         panel?.hide()
         hideBubble()
+        // Okienko natywnego czatu (cudza aplikacja) zasłaniałoby książkę — na czas zrzutu
+        // minimalizujemy je („—" na jego pasku); po zrzucie czat wraca z załączonym obrazem.
+        val chatPkg = if (toNative) NativeAppLauncher.resolvePackage(this, prefs) else null
+        if (chatPkg != null) {
+            ScreenshotService.minimizeWindowOf(chatPkg) { minimized ->
+                captureAfter(if (minimized) 900L else 400L, toNative, panelWasShown, bubbleWasShown)
+            }
+        } else {
+            captureAfter(400L, toNative, panelWasShown, bubbleWasShown)
+        }
+    }
+
+    private fun captureAfter(delay: Long, toNative: Boolean, panelWasShown: Boolean, bubbleWasShown: Boolean) {
         // Chwila, żeby system przerysował ekran bez naszych okien.
         handler.postDelayed({
             ScreenshotService.capture(this) { bitmap ->
@@ -318,6 +336,7 @@ class OverlayService : Service() {
                 if (panelWasShown) panel?.show()
                 if (bitmap == null) {
                     Toast.makeText(this, "Nie udało się zrobić zrzutu ekranu", Toast.LENGTH_SHORT).show()
+                    if (toNative) tryOpenNative(null, prefs.windowSize) // czat mógł zostać zminimalizowany
                     return@capture
                 }
                 Thread {
@@ -326,7 +345,7 @@ class OverlayService : Service() {
                     handler.post { if (shot != null) deliverScreenshot(shot, toNative) }
                 }.start()
             }
-        }, 400)
+        }, delay)
     }
 
     private fun deliverScreenshot(shot: Screenshots.Shot, toNative: Boolean) {
@@ -344,6 +363,7 @@ class OverlayService : Service() {
                 if (ok) "Zrzut ekranu wysłany do czatu" else "Zrzut ekranu jest w schowku — wklej go w czacie",
                 Toast.LENGTH_SHORT,
             ).show()
+            if (!ok) tryOpenNative(null, prefs.windowSize) // przywróć okienko czatu schowane na czas zrzutu
         } else {
             panel?.injectImage(android.util.Base64.encodeToString(shot.bytes, android.util.Base64.NO_WRAP))
             Toast.makeText(this, "Zrzut ekranu dodany do wiadomości", Toast.LENGTH_SHORT).show()

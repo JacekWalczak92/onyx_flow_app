@@ -50,6 +50,10 @@ albo ustaw zmienną `ANDROID_HOME`.
 Logi: `adb logcat | grep -i floatchat`
 
 ## Status
+v13 (13.0.0) — zrzut w trybie natywnym: okienko ChatGPT (cudza app) zasłaniało książkę. Nie da się go przesunąć
+(launch bounds nie zmieniają istniejącego zadania) ani przywołać NeoReadera (`com.onyx.kreader` bez ikony startowej,
+ReaderTab3Activity nieeksportowana). ScreenshotService (getWindows + dispatchGesture) dotyka „—” na pasku okna
+swobodnego (108 dp od prawej, 21 dp od góry) → zrzut → ACTION_SEND przywraca czat. To samo naprawia „Wróć do czytnika”.
 v12 (12.0.0) — 📷 zrzut ekranu pod oknem: ScreenshotService (AccessibilityService.takeScreenshot, tylko zrzut),
 chowa okna FloatChat → zrzut → przywraca; okno strony: wklejenie przez zdarzenie paste z plikiem (zapas: input file),
 natywny czat: ACTION_SEND image/jpeg (FileProvider `${applicationId}.files`); zawsze też do schowka.

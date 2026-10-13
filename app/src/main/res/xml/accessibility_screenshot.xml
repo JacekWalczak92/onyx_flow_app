@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tylko zrzut ekranu: bez odczytu zawartości okien i bez zdarzeń. -->
+<!-- Zrzut ekranu + położenie okien (by zminimalizować okienko czatu na czas zrzutu). -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeAnnouncement"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:canRetrieveWindowContent="false"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows"
+    android:canPerformGestures="true"
+    android:canRetrieveWindowContent="true"
     android:canTakeScreenshot="true"
     android:description="@string/screenshot_service_description"
     android:notificationTimeout="1000" />

@@ -4,5 +4,5 @@
     <string name="notif_channel">Pływające okno</string>
     <string name="notif_text">Bąbel czatu jest aktywny. Dotknij, aby otworzyć ustawienia.</string>
     <string name="screenshot_service_label">FloatChat — zrzut ekranu</string>
-    <string name="screenshot_service_description">Pozwala przyciskowi 📷 w FloatChat zrobić zdjęcie ekranu pod oknem czatu i wkleić je do rozmowy. Usługa nie odczytuje zawartości ekranu w żaden inny sposób.</string>
+    <string name="screenshot_service_description">Pozwala przyciskowi 📷 w FloatChat zrobić zdjęcie ekranu pod oknem czatu i wkleić je do rozmowy. Na czas zrzutu minimalizuje okienko aplikacji czatu (sprawdza położenie okien i dotyka jego przycisku „—”). Nie zapisuje ani nie wysyła treści ekranu poza zrzutem, o który prosisz.</string>
 </resources>
